@@ -150,15 +150,16 @@ model.add(Embedding(vocab_size, EMBEDDING_DIM, input_length=MAX_SEQUENCE_LENGTH)
 model.add(SpatialDropout1D(0.5))
 model.add(LSTM(50, dropout=0.5, recurrent_dropout=0.5))
 model.add(Dropout(0.5))
+
 model.add(Dense(1, activation='sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy', f1_m, precision_m, recall_m])
 model.summary()
 
-history = model.fit(X_train, y_train, epochs=5, validation_split=0.2, verbose=True, batch_size=32)
-loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=0)
-scores = model.evaluate(X_test, y_test, verbose=1)
-print("Accuracy: %.2f%%" % (scores[1]*100))
+history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32)
+loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=1)
+# scores = model.evaluate(X_test, y_test, verbose=1)
+# print("Accuracy: %.2f%%" % (scores[1]*100))
 print("F1-score")
 print(f1_score)
 print("Precision")
@@ -186,8 +187,20 @@ plt.legend(['train', 'test'], loc='upper left')
 plt.show()
 plt.savefig('foo1.png')
 
-test_word = "This is a bad movie"
+test_word = "This is a bad bad movie"
 tw = tokenizer.texts_to_sequences([test_word])
-tw = pad_sequences(tw, maxlen=200)
+tw = pad_sequences(tw, maxlen=30)
+prediction = int(model.predict(tw).round().item())
+print(Y[prediction])
+
+test_word = "This film is terrible"
+tw = tokenizer.texts_to_sequences([test_word])
+tw = pad_sequences(tw, maxlen=30)
+prediction = int(model.predict(tw).round().item())
+print(Y[prediction])
+
+test_word = "This film is great"
+tw = tokenizer.texts_to_sequences([test_word])
+tw = pad_sequences(tw, maxlen=30)
 prediction = int(model.predict(tw).round().item())
 print(Y[prediction])
