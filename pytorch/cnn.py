@@ -174,7 +174,7 @@ class CNN(nn.Module):
         return logit
 
 
-def train_validate_test_split(df, train_percent=.8, validate_percent=.1):
+def train_validate_test_split(df, train_percent=.7, validate_percent=.1):
     """Splits the given dataset.
 
     This method splits a dataframe into:
@@ -195,19 +195,25 @@ def train_validate_test_split(df, train_percent=.8, validate_percent=.1):
     """
 
     # shuffle the given dataframe indexes
-    perm = numpy.random.permutation(df.index)
+    shuffled = numpy.random.permutation(df.index)
     # get the number of rows inside the dataframe
-    m = len(df.index)
+    data_length = len(df.index)
     # compute the number of rows for the training dataset
-    train_end = int(train_percent * m)
+    train_end = int(train_percent * data_length)
+    # make the training dataset size divide perfectly the batch size
+    train_end = int(train_end/BATCH_SIZE) * BATCH_SIZE + BATCH_SIZE
     # compute the number of rows for the validation dataset
-    validate_end = int(validate_percent * m) + train_end
+    validate_end = int(validate_percent * data_length) + train_end
+    # make the validation dataset size divide perfectly the batch size
+    validate_end = int(validate_end / BATCH_SIZE) * BATCH_SIZE + BATCH_SIZE
+    # make the test dataset size divide perfectly the batch size
+    test_end = int(data_length / BATCH_SIZE) * BATCH_SIZE
     # set the training dataset
-    train_df = df.iloc[perm[:train_end]]
+    train_df = df.iloc[shuffled[:train_end]]
     # set the validation dataset
-    valid_df = df.iloc[perm[train_end:validate_end]]
+    valid_df = df.iloc[shuffled[train_end:validate_end]]
     # set the test dataset
-    test_df = df.iloc[perm[validate_end:]]
+    test_df = df.iloc[shuffled[validate_end:test_end]]
     # save the training dataset
     train_df.to_csv('train_df.csv', index=False)
     # save the validation dataset
@@ -318,9 +324,9 @@ def train(iterator):
         # make predictions
         predictions = model(batch.Summary).squeeze(1)
         # compute loss
-        loss = criterion(predictions, batch.Sentiment[0])
+        loss = criterion(predictions, batch.Sentiment.squeeze(0))
         # compute accuracy
-        acc = binary_accuracy(predictions, batch.Sentiment[0])
+        acc = binary_accuracy(predictions, batch.Sentiment.squeeze(0))
         # store the gradients
         loss.backward()
         # parameter update based on the current gradients
@@ -365,9 +371,9 @@ def evaluate(iterator):
             # make predictions
             predictions = model(batch.Summary).squeeze(1)
             # compute loss
-            loss = criterion(predictions, batch.Sentiment[0])
+            loss = criterion(predictions, batch.Sentiment.squeeze(0))
             # compute accuracy
-            acc = binary_accuracy(predictions, batch.Sentiment[0])
+            acc = binary_accuracy(predictions, batch.Sentiment.squeeze(0))
             # update epoch loss accumulator
             epoch_loss += loss.item()
             # update epoch accuracy accumulator
@@ -520,7 +526,7 @@ if __name__ == "__main__":
     # define torchtext data text field
     TEXT = data.Field(tokenize='spacy', batch_first=True)
     # define torchtext data label field
-    LABEL = data.Field(dtype=torch.float, unk_token=None, pad_token=None, batch_first=True)
+    LABEL = data.Field(dtype=torch.float, unk_token=None, pad_token=None)
     # associate defined fields with DataFrame columns
     fields = [('Summary', TEXT), ('Sentiment', LABEL)]
     # define a dataset of columns stored in CSV
