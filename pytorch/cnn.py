@@ -416,7 +416,6 @@ def plot_loss_and_accuracy():
     plt.plot(val_losses, label="Validation loss")
     plt.legend()
     plt.title("Losses")
-    plt.show()
     plt.savefig("model-train_valid_losses.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 
