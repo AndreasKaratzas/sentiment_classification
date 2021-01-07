@@ -38,6 +38,7 @@ from torchtext import data
 from nltk import word_tokenize
 from collections import Counter
 
+import re
 import time
 import tqdm
 import math
@@ -178,7 +179,58 @@ class CNN(nn.Module):
         return logit
 
 
-def train_validate_test_split(df, train_percent=.7, validate_percent=.1):
+def nlp_preprocessor(text):
+    """Defines an NLP preprocessor.
+
+    This method takes some text and filters it. It deletes any
+    non - alphanumeric character found. This is a standard
+    preprocessing routine in machine learning models for NLP.
+    It increases model's performance.
+
+    Parameters
+    ----------
+    text: str
+        This is the string to preprocess.
+
+    Returns
+    -------
+    str
+        The preprocessed - filtered string.
+    """
+
+    text = re.sub('<[^>]*>', '', text)
+    emoticons = re.findall('(?::|;|=)(?:-)?[)(DP]', text)
+    text = re.sub('[\W]+', ' ', text.lower()) + ' '.join(emoticons).replace('-', '')
+    return text
+
+
+def dataset_preprocessor(df, column, filepath):
+    """Preprocess text in given dataset.
+
+    This method calls the predefined NLP preprocessor to filter out
+    any non-alphanumeric character found in the given dataset. The
+    method saves afterward the result using the given filepath. The
+    filepath can also be relative. An example filepath is provided:
+
+        `./filtered_dataset.csv`
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        This is the given dataset.
+    column: str
+        This is the dataset split ratio to get the sample data to fit the model.
+    filepath: str
+        This is the dataset split ratio to get the sample data to validate the model.
+    """
+
+    # apply the preprocessor to the dataframe
+    df[column] = df[column].apply(nlp_preprocessor)
+    # save data
+    df.to_csv(filepath, index=False)
+
+
+def train_validate_test_split(df, seed, train_percent=.7, validate_percent=.1):
     """Splits the given dataset.
 
     This method splits a dataframe into:
@@ -192,6 +244,8 @@ def train_validate_test_split(df, train_percent=.7, validate_percent=.1):
     ----------
     df: pandas.DataFrame
         This is the given dataset.
+    seed: int
+        This is the seed used for the NumPy shuffler.
     train_percent: float (optional)
         This is the dataset split ratio to get the sample data to fit the model.
     validate_percent: float (optional)
@@ -199,7 +253,7 @@ def train_validate_test_split(df, train_percent=.7, validate_percent=.1):
     """
 
     # shuffle the given dataframe indexes
-    shuffled = numpy.random.permutation(df.index)
+    shuffled = numpy.random.RandomState(seed).permutation(df.index)
     # get the number of rows inside the dataframe
     data_length = len(df.index)
     # compute the number of rows for the training dataset
@@ -251,9 +305,9 @@ def inspect_vocab(df):
     Returns
     -------
     int
-        The vocabulary size after the virtual subsampling
+        The vocabulary size after the virtual subsampling.
     int
-        The vocabulary size without virtual subsampling
+        The vocabulary size without virtual subsampling.
 
     See Also
     --------
@@ -531,7 +585,7 @@ def predict_sentiment(sentence, min_len=5):
     # unsqueeze tensor to make it 2D
     tensor = tensor.unsqueeze(0)
     # filter prediction using sigmoid
-    prediction = torch.sigmoid(model(tensor))
+    prediction = F.sigmoid(model(tensor))
     return prediction.item()
 
 
@@ -595,16 +649,22 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     # define batch size
     BATCH_SIZE = 32
+    # defines the input's filepath
+    dataset_filepath = "../dataset/MoviesDataset.csv"
     # load the dataset
-    dataset = pandas.read_csv("../dataset/MoviesDataset.csv")
+    dataset = pandas.read_csv(dataset_filepath)
     # inspect vocabulary
     vocab_subsampled, token_count = inspect_vocab(dataset)
     # set subsampling flag
     subsampling = True
     # set vocabulary size
     vocab_size = compute_vocab_size()
+    # dataset preprocessed
+    dataset_preprocessor(dataset, 'Summary', "../dataset/MoviesDatasetPreprocessed.csv")
+    # reload dataset after preprocessing
+    dataset = pandas.read_csv("../dataset/MoviesDatasetPreprocessed.csv")
     # split the dataset
-    train_validate_test_split(dataset)
+    train_validate_test_split(dataset, SEED)
     # define torchtext data text field
     TEXT = data.Field(tokenize='spacy', batch_first=True)
     # define torchtext data label field
@@ -653,7 +713,7 @@ if __name__ == "__main__":
     # define the number of channels produced by each convolution
     N_FILTERS = 64
     # define the size of the first dimension of the kernel of each convolutional layer
-    FILTER_SIZES = [3, 3, 3, 3]
+    FILTER_SIZES = [2, 3, 4, 5]
     # define the number of neurons in the output layer of the model
     OUTPUT_DIM = 1
     # define the probability of an element to be zeroed
