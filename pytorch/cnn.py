@@ -14,7 +14,7 @@ we get an image.
 
 See Also
 --------
-torchtext.readthedocs.io/en/latest/index.html
+`<https://torchtext.readthedocs.io/en/latest/index.html>`_
 
 References
 ----------
@@ -35,8 +35,12 @@ import torch.nn.functional as F
 
 from torchtext import data
 
+from nltk import word_tokenize
+from collections import Counter
+
 import time
 import tqdm
+import math
 import spacy
 import numpy
 import pandas
@@ -222,13 +226,84 @@ def train_validate_test_split(df, train_percent=.7, validate_percent=.1):
     test_df.to_csv('test_df.csv', index=False)
 
 
+def inspect_vocab(df):
+    """Estimates the Vocabulary size after subsampling.
+
+    This method performs a virtual subsampling of the given dataset.
+    This is done to increase the context window size of the embedding
+    layer. If the computed probability is less than 50%, then the word
+    is virtually discarded. The probability is given by the formula:
+
+    .. math::
+
+        p = 1 - \\sqrt{\\frac{t}{f}},
+
+    Where:
+        * :math:`p` is the probability of the token to be virtually discarded
+        * :math:`t` is a chosen threshold typically around :math:`10^5`
+        * :math:`f` the token frequency
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        This is the given dataset.
+
+    Returns
+    -------
+    int
+        The vocabulary size after the virtual subsampling
+    int
+        The vocabulary size without virtual subsampling
+
+    See Also
+    --------
+    `<https://www.mitpressjournals.org/doi/pdf/10.1162/tacl_a_00134>`_
+
+    `<https://arxiv.org/abs/1301.3781>`_
+    """
+
+    # initialize vocabulary size register
+    unique_count = 0
+    # get the text column loaded in a pandas Series
+    texts = df.Summary.str.lower()
+    # get a dictionary with the count of each token in that pandas Series
+    word_counts = Counter(word_tokenize('\n'.join(texts)))
+    # get the total token sum
+    total_token_count = sum(word_counts.values())
+    # get the unique token sum
+    final_count = len(word_counts)
+    # initialize threshold constant
+    threshold = 1e-5
+    # use the subsampling formula to estimate the vocabulary size
+    for token_freq in word_counts.values():
+        if 1 - math.sqrt(threshold / (token_freq / total_token_count)) > 0.5:
+            unique_count += 1
+    return unique_count, final_count
+
+
+def compute_vocab_size():
+    """Returns vocabulary size
+
+    This method computes vocabulary size. It uses the subsampling
+    flag defined in the main thread. If subsampling is activated,
+    then the method sets the vocabulary size equal to the subsampled
+    estimation of the vocabulary size. Otherwise, it sets the
+    vocabulary size equal to the total unique token count.
+    """
+
+    if subsampling:
+        return vocab_subsampled
+    else:
+        return token_count
+
+
 def count_parameters():
     """Counts model trainable parameters.
 
     Returns
     -------
     int
-        The number of trainable parameters
+        The number of trainable parameters.
     """
 
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -520,8 +595,16 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     # define batch size
     BATCH_SIZE = 32
-    # split the given dataset
-    train_validate_test_split(pandas.read_csv("../dataset/MoviesDataset.csv"))
+    # load the dataset
+    dataset = pandas.read_csv("../dataset/MoviesDataset.csv")
+    # inspect vocabulary
+    vocab_subsampled, token_count = inspect_vocab(dataset)
+    # set subsampling flag
+    subsampling = True
+    # set vocabulary size
+    vocab_size = compute_vocab_size()
+    # split the dataset
+    train_validate_test_split(dataset)
     # define torchtext data text field
     TEXT = data.Field(tokenize='spacy', batch_first=True)
     # define torchtext data label field
@@ -540,7 +623,7 @@ if __name__ == "__main__":
     )
     # construct the Vocab object for the TEXT field
     TEXT.build_vocab(train_data, valid_data, test_data,
-                     max_size=10000,
+                     max_size=vocab_size,
                      vectors="glove.6B.100d",
                      unk_init=torch.Tensor.normal_)
     # construct the Vocab object for the LABEL field
