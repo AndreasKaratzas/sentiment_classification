@@ -20,12 +20,13 @@ References
 ----------
 The Deep Learning Framework used for the development of the current module is Pytorch [1]_.
 
-.. [1] PyTorch: An Imperative Style, High-Performance Deep Learning Library by Paszke, Adam and Gross, Sam and Massa,
-    Francisco and Lerer, Adam and Bradbury, James and Chanan, Gregory and Killeen, Trevor and Lin, Zeming and Gimelshein,
-    Natalia and Antiga, Luca and Desmaison, Alban and Kopf, Andreas and Yang, Edward and DeVito, Zachary and Raison,
-    Martin and Tejani, Alykhan and Chilamkurthy, Sasank and Steiner, Benoit and Fang, Lu and Bai, Junjie and Chintala,
-    Soumith, published in "Advances in Neural Information Processing Systems 32", "Curran Associates, Inc.", "H. Wallach
-    and H. Larochelle and A. Beygelzimer and F. Buc and E. Fox and R. Garnett", pp. 8024-8035, 2019.
+.. [1] PyTorch: An Imperative Style, High-Performance Deep Learning Library by Paszke, Adam and Gross,
+    Sam and Massa, Francisco and Lerer, Adam and Bradbury, James and Chanan, Gregory and Killeen, Trevor and Lin,
+    Zeming and Gimelshein, Natalia and Antiga, Luca and Desmaison, Alban and Kopf, Andreas and Yang, Edward and DeVito,
+    Zachary and Raison, Martin and Tejani, Alykhan and Chilamkurthy, Sasank and Steiner, Benoit and Fang, Lu and Bai,
+    Junjie and Chintala, Soumith, published in "Advances in Neural Information Processing Systems 32",
+    "Curran Associates, Inc.", "H. Wallach and H. Larochelle and A. Beygelzimer and F. Buc and E. Fox and R. Garnett",
+    pp. 8024-8035, 2019.
 """
 
 import torch
@@ -53,8 +54,6 @@ import matplotlib.pyplot as plt
 class CNN(nn.Module):
     """
     Convolutional Neural Network model with Pretrained Embeddings.
-
-    ...
 
     Attributes
     ----------
@@ -649,20 +648,22 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     # define batch size
     BATCH_SIZE = 32
-    # defines the input's filepath
+    # define filepath to dave model
+    model_filepath = 'cnn-model.pt'
+    # define the input's filepath
     dataset_filepath = "../dataset/MoviesDataset.csv"
     # load the dataset
     dataset = pandas.read_csv(dataset_filepath)
+    # dataset preprocessed
+    dataset_preprocessor(dataset, 'Summary', "../dataset/MoviesDatasetPreprocessed.csv")
+    # reload dataset after preprocessing
+    dataset = pandas.read_csv("../dataset/MoviesDatasetPreprocessed.csv")
     # inspect vocabulary
     vocab_subsampled, token_count = inspect_vocab(dataset)
     # set subsampling flag
     subsampling = True
     # set vocabulary size
     vocab_size = compute_vocab_size()
-    # dataset preprocessed
-    dataset_preprocessor(dataset, 'Summary', "../dataset/MoviesDatasetPreprocessed.csv")
-    # reload dataset after preprocessing
-    dataset = pandas.read_csv("../dataset/MoviesDatasetPreprocessed.csv")
     # split the dataset
     train_validate_test_split(dataset, SEED)
     # define torchtext data text field
@@ -769,13 +770,15 @@ if __name__ == "__main__":
         # save the model if validation loss was better than past validation losses
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'cnn-model.pt')
+            torch.save(model.state_dict(), model_filepath)
         # print epoch's progress results
         print(f'\nEpoch: {epoch + 1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%\n')
     # plot model's fitting data
     plot_loss_and_accuracy()
+    # load the best evaluated model
+    model.load_state_dict(torch.load(model_filepath, map_location=device))
     # test the model
     test_loss, test_acc = evaluate(test_iterator)
     # print test results
