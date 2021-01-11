@@ -44,20 +44,27 @@ min_length = min([len(s.split()) for s in X])
 print(max_length)
 print(min_length)
 
-# get the length of every review in the dataset
-reviews_len = [len(x.split()) for x in X]
-# create review length histogram
-pd.Series(reviews_len).hist()
-# plot histogram
-plt.show()
-pd.Series(reviews_len).describe()
+
+def plot_review_length_histogram():
+    # get the length of every review in the dataset
+    reviews_len = [len(x.split()) for x in X]
+    pd.Series(reviews_len).describe()
+    plt.xlabel("Values")
+    plt.ylabel("Count")
+    # create review length histogram
+    pd.Series(reviews_len).hist()
+    # plot histogram
+    plt.show()
+
+
+plot_review_length_histogram()
 # create a sequence of words
 reviews = df['Summary'].values
 all_text = ' '.join([c for c in reviews])
 reviews_split = all_text.split('\n')
 
 all_text2 = ' '.join(reviews_split)
-print('Number of reviews :', len(all_text2))
+print('Number of words :', len(all_text2))
 # create a list of words
 words = all_text2.split()  # Count all the words using Counter Method
 # Build a dictionary that maps words to integers
@@ -76,6 +83,7 @@ unique.sort()
 
 # print unique words
 print(len(unique))
+# check for stemming
 rootWord = []
 for word in unique:
     rootWord.append(ps.stem(word))
@@ -83,49 +91,59 @@ for word in unique:
 print(len(rootWord))
 
 
-# limit the word count and set the stopwords
-wordcount = 500
-stopwords = set(STOPWORDS)
-stopwords.add("br")
+def wordcloud_illustration(texts):
+    # limit the word count and set the stopwords
+    wordcount = 500
+    stopwords = set(STOPWORDS)
+    stopwords.add("br")
 
-# setup, generate and save the word cloud image to a file
-wc = WordCloud(scale=5,
-               background_color="white",
-               max_words=wordcount,
-               stopwords=stopwords)
-wc.generate(all_text2)
-wc.to_file("WordCloud.png")
+    # setup, generate and save the word cloud image to a file
+    wc = WordCloud(scale=5,
+                   background_color="white",
+                   max_words=wordcount,
+                   stopwords=stopwords)
+    wc.generate(texts)
+    wc.to_file("WordCloud.png")
 
-# show the wordcloud as output
-plt.imshow(wc, interpolation='bilinear')
-plt.axis("off")
-plt.figure()
-plt.axis("off")
-plt.show()
+    # show the wordcloud as output
+    plt.imshow(wc, interpolation='bilinear')
+    plt.axis("off")
+    plt.figure()
+    plt.axis("off")
+    plt.show()
 
-max_seq_length = 30
-# Tokenize sentences, keep 10000 most frequent words
-tokenizer = Tokenizer(num_words=10000)
-# Create the vocabulary index based on word frequency
-tokenizer.fit_on_texts(X)
-# Get the number of the unique words based on the number of elements in this dictionary
-vocab_size = len(tokenizer.word_index) + 1
-print('Found %s unique tokens.' % vocab_size)
 
-# Assign an integer to each word and create integer sequences
-x_train_tokens = tokenizer.texts_to_sequences(X_train)
-x_test_tokens = tokenizer.texts_to_sequences(X_test)
+wordcloud_illustration(all_text2)
 
-# pad all our reviews to a specific length
-X_train = pad_sequences(x_train_tokens, maxlen=max_seq_length)
-X_test = pad_sequences(x_test_tokens, maxlen=max_seq_length)
 
+def tokenize_pad(X, X_train, X_test):
+    max_seq_length = 30
+    # Tokenize sentences, keep 10000 most frequent words
+    tokenizer = Tokenizer(num_words=10000)
+    # Create the vocabulary index based on word frequency
+    tokenizer.fit_on_texts(X)
+    # Get the number of the unique words based on the number of elements in this dictionary
+    vocab_size = len(tokenizer.word_index) + 1
+    print('Found %s unique tokens.' % vocab_size)
+
+    # Assign an integer to each word and create integer sequences
+    x_train_tokens = tokenizer.texts_to_sequences(X_train)
+    x_test_tokens = tokenizer.texts_to_sequences(X_test)
+
+    # pad all our reviews to a specific length
+    X_train = pad_sequences(x_train_tokens, maxlen=max_seq_length)
+    X_test = pad_sequences(x_test_tokens, maxlen=max_seq_length)
+    return X_train, X_test, tokenizer, vocab_size
+
+
+X_train, X_test, tokenizer, vocab_size = tokenize_pad(X, X_train, X_test)
 print(len(X_test))
 print(X_train.shape)
 print(X_test.shape)
 
 MAX_SEQUENCE_LENGTH = 30
 EMBEDDING_DIM = 100
+
 
 # calculate recall
 def recall_m(y_true, y_pred):
@@ -134,6 +152,7 @@ def recall_m(y_true, y_pred):
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
+
 # calculate precision
 def precision_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
@@ -141,11 +160,13 @@ def precision_m(y_true, y_pred):
     precision = true_positives / (predicted_positives + K.epsilon())
     return precision
 
+
 # calculate f1-score
 def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
+
 
 # build model
 model = Sequential()
