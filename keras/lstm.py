@@ -1,3 +1,23 @@
+"""Sentiment Classification on Movie Reviews using LSTMs and Keras.
+
+In this script, there is an implementation of a Long Short Term Memory(LSTM)
+which is a Recurrent Neural Network(RNN) to perform binary sentiment classification
+on movie reviews.
+
+See Also
+--------
+`<https://keras.io/api/>`_
+References
+----------
+The Deep Learning Framework used for the development of the current module is Keras [1]_.
+.. [1] Keras: is a deep learning API written in Python, running on top of the machine learning platform
+   TensorFlow. It was developed with a focus on enabling fast experimentation. Being able to go from idea
+   to result as fast as possible is key to doing good research. is the high-level API of TensorFlow 2:
+   an approachable, highly-productive interface for solving machine learning problems, with a focus on modern
+   deep learning. It provides essential abstractions and building blocks for developing and shipping machine
+   learning solutions with high iteration velocity.
+"""
+
 from wordcloud import WordCloud, STOPWORDS
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,24 +48,7 @@ def plot_sentiment_histogram(sentiment):
     print(sentiment.values)
 
 
-# plot histogram
-plot_sentiment_histogram(df['Sentiment'])
-
-X = df['Summary'].values
-Y = df['Sentiment'].values
-
-# split dataset in train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-
-# get the max length of a review (number of words in this sentence)
-max_length = max([len(s.split()) for s in X])
-# get the min length of a review (number of words in this sentence)
-min_length = min([len(s.split()) for s in X])
-print(max_length)
-print(min_length)
-
-
-def plot_review_length_histogram():
+def plot_review_length_histogram(X):
     # get the length of every review in the dataset
     reviews_len = [len(x.split()) for x in X]
     pd.Series(reviews_len).describe()
@@ -57,43 +60,45 @@ def plot_review_length_histogram():
     plt.show()
 
 
-plot_review_length_histogram()
-# create a sequence of words
-reviews = df['Summary'].values
-all_text = ' '.join([c for c in reviews])
-reviews_split = all_text.split('\n')
+def dataset_preprocessing():
+    # create a sequence of words
+    reviews = df['Summary'].values
+    all_text = ' '.join([c for c in reviews])
+    reviews_split = all_text.split('\n')
 
-all_text2 = ' '.join(reviews_split)
-print('Number of words :', len(all_text2))
-# create a list of words
-words = all_text2.split()  # Count all the words using Counter Method
-# Build a dictionary that maps words to integers
-count_words = Counter(words)
+    all_text2 = ' '.join(reviews_split)
+    print('Number of words :', len(all_text2))
+    # create a list of words
+    words = all_text2.split()  # Count all the words using Counter Method
+    # Build a dictionary that maps words to integers
+    count_words = Counter(words)
 
-total_words = len(words)
-sorted_words = count_words.most_common(9000)
-print(total_words)
-unique = []
-for word in words:
-    if word not in unique:
-        unique.append(word)
+    total_words = len(words)
+    sorted_words = count_words.most_common(9000)
+    print(total_words)
+    unique = []
+    for word in words:
+        if word not in unique:
+            unique.append(word)
 
-# sort
-unique.sort()
+    # sort
+    unique.sort()
 
-# print unique words
-print(len(unique))
-# check for stemming
-rootWord = []
-for word in unique:
-    rootWord.append(ps.stem(word))
+    # print unique words
+    print(len(unique))
+    # check for stemming
+    rootWord = []
+    for word in unique:
+        rootWord.append(ps.stem(word))
 
-print(len(rootWord))
+    print(len(rootWord))
+    return all_text2
 
 
 def wordcloud_illustration(texts):
-    # limit the word count and set the stopwords
+    # limit the word count
     wordcount = 500
+    # set the stopwords
     stopwords = set(STOPWORDS)
     stopwords.add("br")
 
@@ -113,9 +118,7 @@ def wordcloud_illustration(texts):
     plt.show()
 
 
-wordcloud_illustration(all_text2)
-
-
+# tokenize create and pad sequences
 def tokenize_pad(X, X_train, X_test):
     max_seq_length = 30
     # Tokenize sentences, keep 10000 most frequent words
@@ -133,16 +136,11 @@ def tokenize_pad(X, X_train, X_test):
     # pad all our reviews to a specific length
     X_train = pad_sequences(x_train_tokens, maxlen=max_seq_length)
     X_test = pad_sequences(x_test_tokens, maxlen=max_seq_length)
+
+    print(len(X_test))
+    print(X_train.shape)
+    print(X_test.shape)
     return X_train, X_test, tokenizer, vocab_size
-
-
-X_train, X_test, tokenizer, vocab_size = tokenize_pad(X, X_train, X_test)
-print(len(X_test))
-print(X_train.shape)
-print(X_test.shape)
-
-MAX_SEQUENCE_LENGTH = 30
-EMBEDDING_DIM = 100
 
 
 # calculate recall
@@ -169,72 +167,133 @@ def f1_m(y_true, y_pred):
 
 
 # build model
-model = Sequential()
-model.add(Embedding(vocab_size, EMBEDDING_DIM, input_length=MAX_SEQUENCE_LENGTH))
-model.add(SpatialDropout1D(0.5))
-model.add(LSTM(50, dropout=0.5, recurrent_dropout=0.5))
-model.add(Dropout(0.5))
-model.add(Dense(1, activation='sigmoid'))
-model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy', f1_m, precision_m, recall_m])
-model.summary()
+def build_model(vocab_size):
+    # initialize parameters for Embedding Layer
+    MAX_SEQUENCE_LENGTH = 30
+    EMBEDDING_DIM = 100
 
-history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32)
-loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=1)
-# scores = model.evaluate(X_test, y_test, verbose=1)
+    model = Sequential()
+    # add Embedding layer
+    model.add(Embedding(vocab_size, EMBEDDING_DIM, input_length=MAX_SEQUENCE_LENGTH))
+    # add Spatial dropout
+    model.add(SpatialDropout1D(0.5))
+    # add LSTM layer
+    model.add(LSTM(50, dropout=0.5, recurrent_dropout=0.5))
+    # add dropout
+    model.add(Dropout(0.5))
+    # add Dense layer with sigmoid activation function
+    model.add(Dense(1, activation='sigmoid'))
+    # compile model
+    model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy', f1_m, precision_m, recall_m])
+    model.summary()
 
-# Print metrics
-print("F1-score")
-print(f1_score)
-print("Precision")
-print(precision)
-print("Recall")
-print(recall)
+    return model
+
+
+def train_model(model, X_train, y_train,X_test, y_test):
+
+    history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32)
+    loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=1)
+    # scores = model.evaluate(X_test, y_test, verbose=1)
+
+    # Print metrics
+    print("F1-score")
+    print(f1_score)
+    print("Precision")
+    print(precision)
+    print("Recall")
+    print(recall)
+    return history, model
+
 
 # create loss and accuracy graphs
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
+def plot_graphs(history):
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
 
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-plt.savefig('foo.png')
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
+    # create accuracy graph
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+    # save to file
+    plt.savefig('foo.png')
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
 
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-plt.savefig('foo1.png')
+    # create loss graph
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+    # save to file
+    plt.savefig('foo1.png')
+
 
 # Test our model
-test_word = "This is a bad bad movie"
-tw = tokenizer.texts_to_sequences([test_word])
-tw = pad_sequences(tw, maxlen=30)
-print(model.predict(tw))
-prediction = int(model.predict(tw).round().item())
-print(Y[prediction])
+def test_model(model, tokenizer):
 
-test_word = "This film is terrible"
-tw1 = tokenizer.texts_to_sequences([test_word])
-tw1 = pad_sequences(tw1, maxlen=30)
-print(model.predict(tw1))
-prediction1 = int(model.predict(tw1).round().item())
-print(Y[prediction1])
+    test_word = "This is a bad bad movie"
+    tw = tokenizer.texts_to_sequences([test_word])
+    tw = pad_sequences(tw, maxlen=30)
+    print(model.predict(tw))
+    prediction = 1 if model.predict(tw).item() > 0.5 else 0
+    print(prediction)
+    # prediction = int(model.predict(tw).round().item())
 
-test_word = "This film is great"
-tw2 = tokenizer.texts_to_sequences([test_word])
-tw2 = pad_sequences(tw2, maxlen=30)
-print(model.predict(tw2))
-prediction2 = int(model.predict(tw2).round().item())
-print(Y[prediction2])
+    test_word = "This film is terrible"
+    tw1 = tokenizer.texts_to_sequences([test_word])
+    tw1 = pad_sequences(tw1, maxlen=30)
+    print(model.predict(tw1))
+    prediction1 = 1 if model.predict(tw1).item() > 0.5 else 0
+    print(prediction1)
+    # prediction1 = int(model.predict(tw1).round().item())
 
-test_word = "This film is awesome"
-tw3 = tokenizer.texts_to_sequences([test_word])
-tw3 = pad_sequences(tw3, maxlen=30)
-print(model.predict(tw3))
-prediction3 = int(model.predict(tw3).round().item())
-print(Y[prediction3])
+    test_word = "This film is great"
+    tw2 = tokenizer.texts_to_sequences([test_word])
+    tw2 = pad_sequences(tw2, maxlen=30)
+    print(model.predict(tw2))
+    prediction2 = 1 if model.predict(tw2).item() > 0.5 else 0
+    print(prediction2)
+    # prediction2 = int(model.predict(tw2).round().item())
+
+    test_word = "This film is awesome"
+    tw3 = tokenizer.texts_to_sequences([test_word])
+    tw3 = pad_sequences(tw3, maxlen=30)
+    print(model.predict(tw3))
+    prediction3 = 1 if model.predict(tw3).item() > 0.5 else 0
+    print(prediction3)
+    # prediction3 = int(model.predict(tw3).round().item())
+
+
+def main():
+
+    plot_sentiment_histogram(df['Sentiment'])
+
+    X = df['Summary'].values
+    Y = df['Sentiment'].values
+
+    # split dataset in train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+
+    # get the max length of a review (number of words in this sentence)
+    max_length = max([len(s.split()) for s in X])
+    # get the min length of a review (number of words in this sentence)
+    min_length = min([len(s.split()) for s in X])
+    print(max_length)
+    print(min_length)
+
+    plot_review_length_histogram(X)
+    all_text2 = dataset_preprocessing()
+    wordcloud_illustration(all_text2)
+    X_train, X_test, tokenizer, vocab_size = tokenize_pad(X, X_train, X_test)
+    model = build_model(vocab_size)
+    history, model = train_model(model, X_train, y_train, X_test, y_test)
+    plot_graphs(history)
+    test_model(model, tokenizer)
+
+
+if __name__ == "__main__":
+    main()
