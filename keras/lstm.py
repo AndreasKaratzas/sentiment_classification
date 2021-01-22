@@ -1,4 +1,4 @@
-"""Sentiment Classification on Movie Reviews using LSTMs and Keras.
+""" Sentiment Classification on Movie Reviews using LSTMs and Keras.
 
 In this script, there is an implementation of a Long Short Term Memory(LSTM)
 which is a Recurrent Neural Network(RNN) to perform binary sentiment classification
@@ -30,16 +30,28 @@ from tensorflow.keras.layers import Embedding, Dense, LSTM, Dropout
 from tensorflow.python.keras.layers import SpatialDropout1D
 from collections import Counter
 from keras import backend as K
-from numpy import ndarray
 
 # load dataset
 df = pd.read_csv(r"MoviesDataset.csv")
+# print 10 first rows
 print(df.head(10))
+# initialize Stemmer
 ps = PorterStemmer()
 
 
-# create reviews length histogram
+# create reviews count histogram
 def plot_sentiment_histogram(sentiment):
+    """Plots count of positive and negative reviews histogram.
+
+     This method is used to plot a histogram which shows
+     the number of positive and negative reviews in the dataset.
+
+     Parameters
+     ----------
+     sentiment: numpy.ndarray
+              Sentiment column from the dataset.
+
+    """
     unique_vals = df['Sentiment'].sort_values().unique()
     plt.xlabel("Values")
     plt.ylabel("Count")
@@ -49,7 +61,19 @@ def plot_sentiment_histogram(sentiment):
     print(sentiment.values)
 
 
+# create review length histogram
 def plot_review_length_histogram(X):
+    """Plots reviews length histogram.
+
+     This method is used to plot a histogram which shows
+     the total number of reviews that have a specific length.
+
+     Parameters
+     ----------
+     X: pandas.core.series.Series
+              Sentiment column from the dataset.
+
+    """
     # get the length of every review in the dataset
     reviews_len = [len(x.split()) for x in X]
     pd.Series(reviews_len).describe()
@@ -62,21 +86,37 @@ def plot_review_length_histogram(X):
 
 
 def dataset_preprocessing():
+    """Dataset preprocessing.
+
+     This method is used to preprocess the reviews.
+     More specifically:
+
+     * It concatenates all reviews in one string.
+     * It checks if our reviews need stemming
+     * It gets number of unique words
+     * It calculates the frequency of each word
+
+     Returns
+     ----------
+     str
+        All reviews concatenated in one string.
+    """
     # create a sequence of words
     reviews = df['Summary'].values
     all_text = ' '.join([c for c in reviews])
     reviews_split = all_text.split('\n')
-
+    # put all reviews in one string
     all_text2 = ' '.join(reviews_split)
     print('Number of words :', len(all_text2))
     # create a list of words
-    words = all_text2.split()  # Count all the words using Counter Method
-    # Build a dictionary that maps words to integers
+    words = all_text2.split()
+    # build a dictionary that maps words to integers based on frequency
     count_words = Counter(words)
-
+    # count all the words using Counter Method
     total_words = len(words)
     sorted_words = count_words.most_common(9000)
     print(total_words)
+    # get unique words
     unique = []
     for word in words:
         if word not in unique:
@@ -97,6 +137,18 @@ def dataset_preprocessing():
 
 
 def wordcloud_illustration(texts):
+    """Plots Wordcloud illustration.
+
+     This method is used to plot a Wordcloud illustration,
+     a technique for visualising frequent words in a text
+     where the size of the words represents their frequency.
+
+     Parameters
+     ----------
+     texts: str
+              All reviews concatenated in one string.
+
+    """
     # limit the word count
     wordcount = 500
     # set the stopwords
@@ -124,7 +176,7 @@ def tokenize_pad(X, X_train, X_test):
     """Creates and pads sequences.
 
        This method is used to transform words into sequences of integers.
-       First, Keras Tokenizer is used to tokenize sentences to words keeping only most frequent words.
+       First, Keras Tokenizer is used to tokenize sentences to words, keeping only most frequent words.
        Then, we transform each word to an integer (based on frequency) and we create a vocabulary.
        After that, we create integer sequences that we pad to a specific length.
 
@@ -149,15 +201,15 @@ def tokenize_pad(X, X_train, X_test):
           Size of the vocabulary
     """
     max_seq_length = 30
-    # Tokenize sentences, keep 10000 most frequent words
+    # tokenize sentences, keep 10000 most frequent words
     tokenizer = Tokenizer(num_words=10000)
-    # Create the vocabulary index based on word frequency
+    # create the vocabulary index based on word frequency
     tokenizer.fit_on_texts(X)
-    # Get the number of the unique words based on the number of elements in this dictionary
+    # get the number of the unique words based on the number of elements in this dictionary
     vocab_size = len(tokenizer.word_index) + 1
     print('Found %s unique tokens.' % vocab_size)
 
-    # Assign an integer to each word and create integer sequences
+    # assign an integer to each word and create integer sequences
     x_train_tokens = tokenizer.texts_to_sequences(X_train)
     x_test_tokens = tokenizer.texts_to_sequences(X_test)
 
@@ -175,23 +227,27 @@ def tokenize_pad(X, X_train, X_test):
 def recall_m(y_true, y_pred):
     """Calculates recall metric.
 
-         This method is used to implement a custom recall metric.
+     This method is used to implement a custom recall metric.
 
-         Parameters
-         ----------
-         y_true: tensor
-               Is the true data (or target, ground truth) we pass to the fit method
-         y_pred: tensor
-               Is the data predicted (calculated, output) by our model.
-
-         Returns
-         -------
-         float
-               Recall metric.
+     Parameters
+     ----------
+     y_true: keras_tensor
+           Is the true data (or target, ground truth) we pass to the fit method
+           (conversion of the numpy array y_train into a tensor).
+     y_pred: keras_tensor
+           Is the data predicted (calculated, output) by our model.
+           (conversion of the numpy array y_train into a tensor).
+     Returns
+     -------
+     float
+           Recall metric.
 
     """
+    # calculate true positives
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    # get total actual positives
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    # calculate recall
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
@@ -200,23 +256,27 @@ def recall_m(y_true, y_pred):
 def precision_m(y_true, y_pred):
     """Calculates precision metric.
 
-         This method is used to implement a custom precision metric.
+    This method is used to implement a custom precision metric.
 
-         Parameters
-         ----------
-         y_true: tensor
-               Is the true data (or target, ground truth) we pass to the fit method
-         y_pred: tensor
-               Is the data predicted (calculated, output) by our model.
+    Parameters
+    ----------
+    y_true: keras_tensor
+          Is the true data (or target, ground truth) we pass to the fit method
+          (conversion of the numpy array y_train into a tensor).
+    y_pred: keras_tensor
+          Is the data predicted (calculated, output) by our model.
 
-         Returns
-         -------
-         float
-               Precision metric.
+    Returns
+    -------
+    float
+          Precision metric.
 
     """
+    # calculate true positives
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    # get predicted positives (true positives and false positives)
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    # calculate precision
     precision = true_positives / (predicted_positives + K.epsilon())
     return precision
 
@@ -225,51 +285,63 @@ def precision_m(y_true, y_pred):
 def f1_m(y_true, y_pred):
     """Calculates f1 metric.
 
-         This method is used to implement a custom f1 metric.
+     This method is used to implement a custom f1 metric.
 
-         Parameters
-         ----------
-         y_true: tensor
-               Is the true data (or target, ground truth) we pass to the fit method
-         y_pred: tensor
-               Is the data predicted (calculated, output) by our model.
+     Parameters
+     ----------
+     y_true: keras_tensor
+           Is the true data (or target, ground truth) we pass to the fit method
+           (conversion of the numpy array y_train into a tensor).
+     y_pred: keras_tensor
+           Is the data predicted (calculated, output) by our model.
 
-         Returns
-         -------
-         float
-               F1-score metric.
+     Returns
+     -------
+     float
+           F1-score metric.
 
-         """
+     """
+    # get precision
     precision = precision_m(y_true, y_pred)
+    # get recall
     recall = recall_m(y_true, y_pred)
-    return 2*((precision*recall)/(precision+recall+K.epsilon()))
+    return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
 
 
 # build model
 def build_model(vocab_size):
     """Defines and compiles a model.
 
-           This method defines and then compiles a Sequential Keras Model.
-           Our Sequential model is a linear stack of these layers:
+       This method defines and then compiles a Sequential Keras Model.
+       Our Sequential model is a linear stack of these layers:
 
-           1.Embedding Layer
+       1.Embedding Layer: a dictionary mapping integer indices to dense vectors, it takes
+                          as input a 2D tensor of integers, of shape (samples, sequence_length),
+                          where each entry is a sequence of integers.
 
-           2.SpatialDropout1D
+       2.SpatialDropout1D: same function as Dropout, however, it drops entire 1D feature maps
+                           instead of individual elements.
 
-           3.LSTM
+       3.LSTM
 
-           4.Dropout
+       4.Dropout: randomly sets input units to 0 with a frequency of rate at each step during
+                  training time, which helps prevent overfitting. Inputs not set to 0 are scaled
+                  up by 1/(1 - rate) such that the sum over all inputs is unchanged.
 
-           5.Dense
+       5.Dense:  implements the operation: output = activation(dot(input, kernel) + bias), where activation is the
+                 element-wise activation function passed as the activation argument, kernel is a weights matrix
+                 created by the layer, and bias is a bias vector created by the layer (optional - not used here).
+                 We choose Sigmoid as activation function because the output is binary. The optimizer is Adam and
+                 the loss function is Binary Crossentropy because the output is binary
 
-           Parameters
-           ----------
-           vocab_size: int
-                 Size of the vocabulary
-           Returns
-           -------
-           Sequential
-               The compiled model
+       Parameters
+       ----------
+       vocab_size: int
+             Size of the vocabulary
+       Returns
+       -------
+       Sequential
+           The compiled model
     """
     # initialize parameters for Embedding Layer
     MAX_SEQUENCE_LENGTH = 30
@@ -322,7 +394,7 @@ def train_model(model, X_train, y_train, X_test, y_test):
     loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=1)
     # scores = model.evaluate(X_test, y_test, verbose=1)
 
-    # Print metrics
+    # print metrics
     print("F1-score")
     print(f1_score)
     print("Precision")
@@ -334,6 +406,16 @@ def train_model(model, X_train, y_train, X_test, y_test):
 
 # create loss and accuracy graphs
 def plot_graphs(history):
+    """Plots loss and accuracy graphs.
+
+       This method plots loss and accuracy graphs of our model.
+
+       Parameters
+       ----------
+       history: tensorflow.keras.callbacks.History()
+                A record of training loss values and metrics values at successive epochs,
+                as well as validation loss values and validation metrics values
+    """
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
 
@@ -358,7 +440,6 @@ def plot_graphs(history):
     plt.savefig('foo1.png')
 
 
-# Test our model
 def test_model(model, tokenizer):
     """Tests our model.
 
@@ -375,47 +456,58 @@ def test_model(model, tokenizer):
         tokenizer: Tokenizer
             Allows us to vectorize a text corpus, by turning each text into a sequence of integers
 
-        """
+    """
+    # sample review 1
     test_word = "This is a bad bad movie"
+    # transform text to a sequence of integers
     tw = tokenizer.texts_to_sequences([test_word])
+    # pad review to a specific length
     tw = pad_sequences(tw, maxlen=30)
     print(model.predict(tw))
+    # get prediction (0 or 1)
     prediction = 1 if model.predict(tw).item() > 0.5 else 0
     print(prediction)
-    # prediction = int(model.predict(tw).round().item())
 
+    # sample review 2
     test_word = "This film is terrible"
+    # transform text to a sequence of integers
     tw1 = tokenizer.texts_to_sequences([test_word])
+    # pad review to a specific length
     tw1 = pad_sequences(tw1, maxlen=30)
     print(model.predict(tw1))
+    # get prediction (0 or 1)
     prediction1 = 1 if model.predict(tw1).item() > 0.5 else 0
     print(prediction1)
-    # prediction1 = int(model.predict(tw1).round().item())
 
+    # sample review 3
     test_word = "This film is great"
+    # transform text to a sequence of integers
     tw2 = tokenizer.texts_to_sequences([test_word])
+    # pad review to a specific length
     tw2 = pad_sequences(tw2, maxlen=30)
     print(model.predict(tw2))
+    # get prediction (0 or 1)
     prediction2 = 1 if model.predict(tw2).item() > 0.5 else 0
     print(prediction2)
-    # prediction2 = int(model.predict(tw2).round().item())
 
+    # sample review 4
     test_word = "This film is awesome"
+    # transform text to a sequence of integers
     tw3 = tokenizer.texts_to_sequences([test_word])
+    # pad review to a specific length
     tw3 = pad_sequences(tw3, maxlen=30)
     print(model.predict(tw3))
+    # get prediction (0 or 1)
     prediction3 = 1 if model.predict(tw3).item() > 0.5 else 0
     print(prediction3)
-    # prediction3 = int(model.predict(tw3).round().item())
-
+    
 
 def main():
-
     plot_sentiment_histogram(df['Sentiment'])
 
     X = df['Summary'].values
     Y = df['Sentiment'].values
-
+    print(type(Y))
     # split dataset in train and test sets
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
