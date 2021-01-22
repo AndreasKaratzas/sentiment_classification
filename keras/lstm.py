@@ -30,6 +30,7 @@ from tensorflow.keras.layers import Embedding, Dense, LSTM, Dropout
 from tensorflow.python.keras.layers import SpatialDropout1D
 from collections import Counter
 from keras import backend as K
+from numpy import ndarray
 
 # load dataset
 df = pd.read_csv(r"MoviesDataset.csv")
@@ -120,6 +121,33 @@ def wordcloud_illustration(texts):
 
 # tokenize create and pad sequences
 def tokenize_pad(X, X_train, X_test):
+    """Creates and pads sequences.
+
+       This method is used to transform words into sequences of integers.
+       First, Keras Tokenizer is used to tokenize sentences to words keeping only most frequent words.
+       Then, we transform each word to an integer (based on frequency) and we create a vocabulary.
+       After that, we create integer sequences that we pad to a specific length.
+
+       Parameters
+       ----------
+       X:
+       X_train: numpy.ndarray
+              Used to fit the machine learning model (input).
+       X_test: numpy.ndarray
+             Used to evaluate the fit machine learning model(input).
+
+
+       Returns
+       -------
+       numpy.ndarray
+                    Used to fit the machine learning model (input).
+       numpy.ndarray
+                    Used to evaluate the fit machine learning model(input).
+       Tokenizer
+             Allows us to vectorize a text corpus, by turning each text into a sequence of integers
+       int
+          Size of the vocabulary
+    """
     max_seq_length = 30
     # Tokenize sentences, keep 10000 most frequent words
     tokenizer = Tokenizer(num_words=10000)
@@ -145,6 +173,23 @@ def tokenize_pad(X, X_train, X_test):
 
 # calculate recall
 def recall_m(y_true, y_pred):
+    """Calculates recall metric.
+
+         This method is used to implement a custom recall metric.
+
+         Parameters
+         ----------
+         y_true: tensor
+               Is the true data (or target, ground truth) we pass to the fit method
+         y_pred: tensor
+               Is the data predicted (calculated, output) by our model.
+
+         Returns
+         -------
+         float
+               Recall metric.
+
+    """
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
@@ -153,6 +198,23 @@ def recall_m(y_true, y_pred):
 
 # calculate precision
 def precision_m(y_true, y_pred):
+    """Calculates precision metric.
+
+         This method is used to implement a custom precision metric.
+
+         Parameters
+         ----------
+         y_true: tensor
+               Is the true data (or target, ground truth) we pass to the fit method
+         y_pred: tensor
+               Is the data predicted (calculated, output) by our model.
+
+         Returns
+         -------
+         float
+               Precision metric.
+
+    """
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
     precision = true_positives / (predicted_positives + K.epsilon())
@@ -161,6 +223,23 @@ def precision_m(y_true, y_pred):
 
 # calculate f1-score
 def f1_m(y_true, y_pred):
+    """Calculates f1 metric.
+
+         This method is used to implement a custom f1 metric.
+
+         Parameters
+         ----------
+         y_true: tensor
+               Is the true data (or target, ground truth) we pass to the fit method
+         y_pred: tensor
+               Is the data predicted (calculated, output) by our model.
+
+         Returns
+         -------
+         float
+               F1-score metric.
+
+         """
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
@@ -168,6 +247,30 @@ def f1_m(y_true, y_pred):
 
 # build model
 def build_model(vocab_size):
+    """Defines and compiles a model.
+
+           This method defines and then compiles a Sequential Keras Model.
+           Our Sequential model is a linear stack of these layers:
+
+           1.Embedding Layer
+
+           2.SpatialDropout1D
+
+           3.LSTM
+
+           4.Dropout
+
+           5.Dense
+
+           Parameters
+           ----------
+           vocab_size: int
+                 Size of the vocabulary
+           Returns
+           -------
+           Sequential
+               The compiled model
+    """
     # initialize parameters for Embedding Layer
     MAX_SEQUENCE_LENGTH = 30
     EMBEDDING_DIM = 100
@@ -190,8 +293,31 @@ def build_model(vocab_size):
     return model
 
 
-def train_model(model, X_train, y_train,X_test, y_test):
+def train_model(model, X_train, y_train, X_test, y_test):
+    """Fits a model.
+       This method is used to train the defined LSTM model.
 
+       Parameters
+       ----------
+       model: Sequential
+             The compiled Sequential model.
+       X_train: numpy.ndarray
+              Used to fit the machine learning model (input).
+       y_train: numpy.ndarray
+              Used to fit the machine learning model (output).
+       X_test: numpy.ndarray
+             Used to evaluate the fit machine learning model(input).
+       y_test: numpy.ndarray
+             Used to evaluate the fit machine learning model(output).
+
+       Returns
+       -------
+       tensorflow.keras.callbacks.History()
+                 A record of training loss values and metrics values at successive epochs,
+                 as well as validation loss values and validation metrics values
+       Sequential
+                The trained model
+       """
     history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32)
     loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=1)
     # scores = model.evaluate(X_test, y_test, verbose=1)
@@ -234,7 +360,22 @@ def plot_graphs(history):
 
 # Test our model
 def test_model(model, tokenizer):
+    """Tests our model.
 
+        This method tests our model with 4 sample reviews to see how it predicts sentiment.
+        First, it transforms a sentence into a sequence of integers.
+        Then the sequence is given to the trained model, which
+        predicts the sentiment of that review.
+
+        Parameters
+        ----------
+        model: Sequential
+            The trained Sequential Model.
+
+        tokenizer: Tokenizer
+            Allows us to vectorize a text corpus, by turning each text into a sequence of integers
+
+        """
     test_word = "This is a bad bad movie"
     tw = tokenizer.texts_to_sequences([test_word])
     tw = pad_sequences(tw, maxlen=30)
