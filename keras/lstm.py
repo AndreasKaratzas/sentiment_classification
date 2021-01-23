@@ -49,7 +49,7 @@ def plot_sentiment_histogram(sentiment):
      Parameters
      ----------
      sentiment: numpy.ndarray
-              Sentiment column from the dataset.
+              Review column from the dataset.
 
     """
     unique_vals = df['Sentiment'].sort_values().unique()
@@ -182,7 +182,8 @@ def tokenize_pad(X, X_train, X_test):
 
        Parameters
        ----------
-       X:
+       X: numpy.ndarray
+               Review column from the dataset.
        X_train: numpy.ndarray
               Used to fit the machine learning model (input).
        X_test: numpy.ndarray
@@ -507,7 +508,7 @@ def main():
 
     X = df['Summary'].values
     Y = df['Sentiment'].values
-    print(type(Y))
+    
     # split dataset in train and test sets
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
