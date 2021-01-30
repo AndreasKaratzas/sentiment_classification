@@ -23,7 +23,7 @@ To install the project first install [Anaconda](https://docs.anaconda.com/anacon
 * `python cnn.py` to execute the **CNN** model
 * `python lstm.py` to execute the **LSTM** model
 
-The default training dataset is *Cornell movie review* dataset. To change the default dataset, edit the code with respect to the path of your custom dataset.
+We recommend to execute both the installation and the scripts as an Administrator. The default training dataset is *Cornell movie review* dataset. To change the default dataset, edit the code with respect to the path of your custom dataset.
    
 ## Project Structure
 
