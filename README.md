@@ -39,15 +39,15 @@ The datasets used to test the models' performance can be found under the `datase
 * The `Cornell movie review` dataset is named `MoviesDataset.csv`
 * The `IMDB` dataset is named `IMDB.csv`
 
-There is also a directory named docs, where the interested can find the documentation generated using [Sphinx](https://www.sphinx-doc.org/en/master/index.html).
+There is also a directory named docs, where the interested can find the documentation generated using [Sphinx](https://www.sphinx-doc.org/en/master/index.html). The documentation can also be found at the project's [readthedocs](https://sentiment-classification.readthedocs.io/en/latest/index.html).
 
 ## Documentation
 
-The code is fully documented. 
+The code is fully documented.
 
 ## Results
 
-The models were tested under 2 datasets. The results are shown below.
+The models were tested under 2 datasets. The expected results are shown below.
 
 -------
 ### Cornell Dataset
@@ -68,9 +68,9 @@ The models were tested under 2 datasets. The results are shown below.
 -------
 |                	|          CNN          	|          LSTM         	|
 |:----------------:	|:---------------------:	|:---------------------:	|
-|      Device      	|   NVIDIA GTX 1660 Ti  	|  Intel Core i7 9750H  	|
+|      Device      	|   NVIDIA GTX 1660 Ti  	|  AMD Ryzen 5 3600       	|
 | Number of Epochs 	|         20        	    |         5             	|
-| Epoch  Benchmark 	|         2 sec.        	|         7 sec.        	|
+| Epoch  Benchmark 	|         ~19 min.        	|         142 sec.        	|
 |  Loss  Function  	| Binary  Cross Entropy 	| Binary  Cross Entropy 	|
-|     Test Loss    	|         0.519         	|         0.7698        	|
-|   Test Accuracy  	|        74.57 %        	|        75.34 %        	|
+|     Test Loss    	|         0.259         	|         0.3021        	|
+|   Test Accuracy  	|        90.41 %        	|        89.34 %        	|
