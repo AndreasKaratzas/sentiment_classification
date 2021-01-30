@@ -1,0 +1,620 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cnn module &mdash; Sentiment Classification</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Sentiment Classification
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">cnn module</a><ul>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Sentiment Classification</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>cnn module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/cnn.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-cnn">
+<span id="cnn-module"></span><h1>cnn module<a class="headerlink" href="#module-cnn" title="Permalink to this headline">¶</a></h1>
+<p>CNN model for Sentiment Classification.</p>
+<p>In this script, there is an implementation of a Convolutional Neural
+Network for Sentiment Classification. The sentiments are binary. To
+classify the data the model uses an Embedding Layer to convert words
+to an arithmetic sequence.</p>
+<p>Convolutions are sliding window functions applied to a matrix that
+achieve specific results. The sliding window is called a kernel, filter,
+or feature detector. By representing each word with a vector of numbers
+of a specific length and stacking a bunch of words on top of each other,
+we get an image.</p>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://torchtext.readthedocs.io/en/latest/index.html">https://torchtext.readthedocs.io/en/latest/index.html</a></p>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p>The Deep Learning Framework used for the development of the current module is Pytorch <a class="reference internal" href="#r4aa08612a8f6-1" id="id1">[1]</a>.</p>
+<dl class="citation">
+<dt class="label" id="r4aa08612a8f6-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>PyTorch: An Imperative Style, High-Performance Deep Learning Library by Paszke, Adam and Gross,
+Sam and Massa, Francisco and Lerer, Adam and Bradbury, James and Chanan, Gregory and Killeen, Trevor and Lin,
+Zeming and Gimelshein, Natalia and Antiga, Luca and Desmaison, Alban and Kopf, Andreas and Yang, Edward and DeVito,
+Zachary and Raison, Martin and Tejani, Alykhan and Chilamkurthy, Sasank and Steiner, Benoit and Fang, Lu and Bai,
+Junjie and Chintala, Soumith, published in “Advances in Neural Information Processing Systems 32”,
+“Curran Associates, Inc.”, “H. Wallach and H. Larochelle and A. Beygelzimer and F. Buc and E. Fox and R. Garnett”,
+pp. 8024-8035, 2019.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="cnn.CNN">
+<em class="property">class </em><code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">CNN</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vocab_size</span></em>, <em class="sig-param"><span class="n">embedding_dim</span></em>, <em class="sig-param"><span class="n">n_filters</span></em>, <em class="sig-param"><span class="n">filter_sizes</span></em>, <em class="sig-param"><span class="n">output_dim</span></em>, <em class="sig-param"><span class="n">dropout</span></em>, <em class="sig-param"><span class="n">pad_idx</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#CNN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.CNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<p>Convolutional Neural Network model with Pretrained Embeddings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vocab_size</strong><span class="classifier">int</span></dt><dd><p>Size of the dictionary of embeddings.</p>
+</dd>
+<dt><strong>embedding_dim: int</strong></dt><dd><p>The size of each embedding vector.</p>
+</dd>
+<dt><strong>n_filters: int</strong></dt><dd><p>Number of channels produced by the convolution.</p>
+</dd>
+<dt><strong>filter_sizes: list</strong></dt><dd><p>A list that contains integers that correspond to the amount of channels produced by the convolution.</p>
+</dd>
+<dt><strong>output_dim: int</strong></dt><dd><p>The size of the output fully connected layer.</p>
+</dd>
+<dt><strong>dropout: float</strong></dt><dd><p>The probability of an element to be zeroed.</p>
+</dd>
+<dt><strong>pad_idx: int</strong></dt><dd><p>The numerical identifier mapped to the string token used as padding.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 71%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>conv_and_pool(x, conv)</strong></p></td>
+<td><p>Applies 1d convolution.</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>forward(x)</strong></p></td>
+<td><p>Defines the computation performed by the CNN model at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt id="cnn.CNN.conv_and_pool">
+<em class="property">static </em><code class="sig-name descname">conv_and_pool</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">conv</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#CNN.conv_and_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.CNN.conv_and_pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies 1d convolution.</p>
+<p>The method applies a 2D convolution over the input. It then filters the convolved output
+using Rectified Linear Unit. The result is a tensor of size [32 x 64 x Y x 100] where:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>32 is the batch size</p></li>
+<li><p>64 is the number of filters</p></li>
+<li><p>Y is the sequence length which is equal to the sentence length</p></li>
+<li><p>100 is size of the second dimension of the kernel of a convolutional layer</p></li>
+</ul>
+</div></blockquote>
+<p>This temporary result is then squeezed to yields a tensor of size [32 x 64 x Y].
+In the last step, the method applies a 1D max pooling over the squeezed tensor with
+a sliding window of size equal to Y. The result is then squeezed again to produce
+a tensor of size [32 x 64].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x: torch.tensor</strong></dt><dd><p>This is a tensor of type float that operates as input for each convolution layer.</p>
+</dd>
+<dt><strong>conv: torch.nn.Module</strong></dt><dd><p>Applies a 2D convolution over a given input.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.tensor</dt><dd><p>The 2D tensor to be used in the linear layer.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cnn.CNN.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#CNN.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.CNN.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed by the CNN model at every call.</p>
+<p>This method <em>forwards</em> the given input to every single model layer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x: torch.tensor</strong></dt><dd><p>This is a tensor of type int that operates as input for the defined model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.tensor</dt><dd><p>The tensor containing the predictions made by the model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="cnn.CNN.training">
+<code class="sig-name descname">training</code><em class="property">: bool</em><a class="headerlink" href="#cnn.CNN.training" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.binary_accuracy">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">binary_accuracy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">preds</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#binary_accuracy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.binary_accuracy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes prediction accuracy.</p>
+<p>This method is used to estimate the models accuracy over binary
+targets. The prediction is rounded to compare it to the true label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>preds: torch.tensor</strong></dt><dd><p>These are the predictions returned by the model for an input batch.</p>
+</dd>
+<dt><strong>y: torch.tensor</strong></dt><dd><p>This is the ground truth tensor for the same input batch.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>torch.tensor</dt><dd><p>The model accuracy ratio for the given predictions. The tensor is a single float element container.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.compute_vocab_size">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">compute_vocab_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#compute_vocab_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.compute_vocab_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns vocabulary size</p>
+<p>This method computes vocabulary size. It uses the subsampling
+flag defined in the main thread. If subsampling is activated,
+then the method sets the vocabulary size equal to the subsampled
+estimation of the vocabulary size. Otherwise, it sets the
+vocabulary size equal to the total unique token count.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.count_parameters">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">count_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#count_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.count_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Counts model trainable parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>int</dt><dd><p>The number of trainable parameters.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.dataset_preprocessor">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">dataset_preprocessor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">column</span></em>, <em class="sig-param"><span class="n">filepath</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#dataset_preprocessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.dataset_preprocessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preprocess text in given dataset.</p>
+<p>This method calls the predefined NLP preprocessor to filter out
+any non-alphanumeric character found in the given dataset. The
+method saves afterward the result using the given filepath. The
+filepath can also be relative. An example filepath is provided:</p>
+<blockquote>
+<div><p><cite>./filtered_dataset.csv</cite></p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>df: pandas.DataFrame</strong></dt><dd><p>This is the given dataset.</p>
+</dd>
+<dt><strong>column: str</strong></dt><dd><p>This is the dataset split ratio to get the sample data to fit the model.</p>
+</dd>
+<dt><strong>filepath: str</strong></dt><dd><p>This is the dataset split ratio to get the sample data to validate the model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.epoch_time">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">epoch_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#epoch_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.epoch_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes epoch duration.</p>
+<p>This method is called upon the launch of each epoch,
+and upon the termination of each epoch. It then uses
+the checkpoints created to compute the epoch’s duration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>int</dt><dd><p>Number of minutes rounded down that represent the running epoch’s duration</p>
+</dd>
+<dt>int</dt><dd><p>The remaining of seconds that represent the running epoch’s duration</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.evaluate">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iterator</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates a model.</p>
+<p>This method is called either to validate the defined CNN model
+or to test it, by disabling gradient calculation. The method
+provides progress context for the user using progressbar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>iterator: torchtext.data.Iterator</strong></dt><dd><p>An iterator to load batches of evaluation data from the given dataset.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The epoch evaluation loss</p>
+</dd>
+<dt>float</dt><dd><p>The epoch evaluation accuracy</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.filter_prediction">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">filter_prediction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prediction</span></em>, <em class="sig-param"><span class="n">critic</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#filter_prediction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.filter_prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides feedback over a custom prediction.</p>
+<p>This method takes the prediction of the model on a custom critic and
+defines if it was positive or negative. Finally, it prints the proper
+message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>prediction: float</strong></dt><dd><p>The probability of a critic being negative</p>
+</dd>
+<dt><strong>critic: str</strong></dt><dd><p>The word sequence used as a critic</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.get_max_length">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">get_max_length</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#get_max_length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.get_max_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes maximum number of tokens given a dataframe.</p>
+<p>This method is used to compute the maximum length found at the text
+column of the given dataframe. The column of the dataframe with the
+text is <em>Summary</em>. This function is useful if one decides to use
+padding for tokenization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>df: pandas.DataFrame</strong></dt><dd><p>This is the dataset of the model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>int</dt><dd><p>The maximum number of tokens found in a dataframe column.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.manual_testing">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">manual_testing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#manual_testing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.manual_testing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls model upon custom critics.</p>
+<p>In this method there are some movie critics
+defined to test the model with custom data.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.nlp_preprocessor">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">nlp_preprocessor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#nlp_preprocessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.nlp_preprocessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines an NLP preprocessor.</p>
+<p>This method takes some text and filters it. It deletes any
+non - alphanumeric character found. This is a standard
+preprocessing routine in machine learning models for NLP.
+It increases model’s performance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>text: str</strong></dt><dd><p>This is the string to preprocess.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The preprocessed - filtered string.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.plot_loss_and_accuracy">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">plot_loss_and_accuracy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#plot_loss_and_accuracy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.plot_loss_and_accuracy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots model’s fitting results.</p>
+<p>This method takes the lists containing the training and the
+validation losses and plots them together. This method is
+useful when detecting an over-fitted model (or an under-fitted).
+The method saves the plot at the project directory.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.predict_sentiment">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">predict_sentiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sentence</span></em>, <em class="sig-param"><span class="n">min_len</span><span class="o">=</span><span class="default_value">5</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#predict_sentiment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.predict_sentiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Classifies a custom critic.</p>
+<p>This method converts a sentence into arithmetic tokens.
+The tokens are then given to a trained model. The model
+predicts the sentiment of that <em>critic</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sentence: str</strong></dt><dd><p>The custom critic to be classified.</p>
+</dd>
+<dt><strong>min_len: int (optional)</strong></dt><dd><p>The minimum length of tokens of the given sentence.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The probability of the critic being negative.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.train">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iterator</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits a model.</p>
+<p>This method is used to fit the defined CNN model. The method provides
+progress context for the user using progressbar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>iterator: torchtext.data.Iterator</strong></dt><dd><p>An iterator to load batches of training data from the given dataset.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The epoch training loss</p>
+</dd>
+<dt>float</dt><dd><p>The epoch training accuracy</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cnn.train_validate_test_split">
+<code class="sig-prename descclassname">cnn.</code><code class="sig-name descname">train_validate_test_split</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">seed</span></em>, <em class="sig-param"><span class="n">train_percent</span><span class="o">=</span><span class="default_value">0.7</span></em>, <em class="sig-param"><span class="n">validate_percent</span><span class="o">=</span><span class="default_value">0.1</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnn.html#train_validate_test_split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cnn.train_validate_test_split" title="Permalink to this definition">¶</a></dt>
+<dd><p>Splits the given dataset.</p>
+<dl class="simple">
+<dt>This method splits a dataframe into:</dt><dd><ul class="simple">
+<li><p>A dataframe used to train the model</p></li>
+<li><p>A dataframe used to validate the model</p></li>
+<li><p>A dataframe used to test the model</p></li>
+</ul>
+</dd>
+</dl>
+<p>The indexes of the given datasets are shuffled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>df: pandas.DataFrame</strong></dt><dd><p>This is the given dataset.</p>
+</dd>
+<dt><strong>seed: int</strong></dt><dd><p>This is the seed used for the NumPy shuffler.</p>
+</dd>
+<dt><strong>train_percent: float (optional)</strong></dt><dd><p>This is the dataset split ratio to get the sample data to fit the model.</p>
+</dd>
+<dt><strong>validate_percent: float (optional)</strong></dt><dd><p>This is the dataset split ratio to get the sample data to validate the model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, Andreas Karatzas and Romanos Kapsalis
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

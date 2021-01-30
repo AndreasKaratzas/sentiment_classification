@@ -1,0 +1,985 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>cnn &mdash; Sentiment Classification</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Sentiment Classification
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Sentiment Classification</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>cnn</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for cnn</h1><div class="highlight"><pre>
+<span></span>
+<span class="sd">&quot;&quot;&quot;CNN model for Sentiment Classification.</span>
+
+<span class="sd">In this script, there is an implementation of a Convolutional Neural</span>
+<span class="sd">Network for Sentiment Classification. The sentiments are binary. To</span>
+<span class="sd">classify the data the model uses an Embedding Layer to convert words</span>
+<span class="sd">to an arithmetic sequence.</span>
+
+<span class="sd">Convolutions are sliding window functions applied to a matrix that</span>
+<span class="sd">achieve specific results. The sliding window is called a kernel, filter,</span>
+<span class="sd">or feature detector. By representing each word with a vector of numbers</span>
+<span class="sd">of a specific length and stacking a bunch of words on top of each other,</span>
+<span class="sd">we get an image.</span>
+
+<span class="sd">See Also</span>
+<span class="sd">--------</span>
+<span class="sd">`&lt;https://torchtext.readthedocs.io/en/latest/index.html&gt;`_</span>
+
+<span class="sd">References</span>
+<span class="sd">----------</span>
+<span class="sd">The Deep Learning Framework used for the development of the current module is Pytorch [1]_.</span>
+
+<span class="sd">.. [1] PyTorch: An Imperative Style, High-Performance Deep Learning Library by Paszke, Adam and Gross,</span>
+<span class="sd">    Sam and Massa, Francisco and Lerer, Adam and Bradbury, James and Chanan, Gregory and Killeen, Trevor and Lin,</span>
+<span class="sd">    Zeming and Gimelshein, Natalia and Antiga, Luca and Desmaison, Alban and Kopf, Andreas and Yang, Edward and DeVito,</span>
+<span class="sd">    Zachary and Raison, Martin and Tejani, Alykhan and Chilamkurthy, Sasank and Steiner, Benoit and Fang, Lu and Bai,</span>
+<span class="sd">    Junjie and Chintala, Soumith, published in &quot;Advances in Neural Information Processing Systems 32&quot;,</span>
+<span class="sd">    &quot;Curran Associates, Inc.&quot;, &quot;H. Wallach and H. Larochelle and A. Beygelzimer and F. Buc and E. Fox and R. Garnett&quot;,</span>
+<span class="sd">    pp. 8024-8035, 2019.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="kn">from</span> <span class="nn">torchtext</span> <span class="kn">import</span> <span class="n">data</span>
+
+<span class="kn">from</span> <span class="nn">nltk</span> <span class="kn">import</span> <span class="n">word_tokenize</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">spacy</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+
+<div class="viewcode-block" id="CNN"><a class="viewcode-back" href="../cnn.html#cnn.CNN">[docs]</a><span class="k">class</span> <span class="nc">CNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convolutional Neural Network model with Pretrained Embeddings.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    vocab_size : int</span>
+<span class="sd">        Size of the dictionary of embeddings.</span>
+<span class="sd">    embedding_dim: int</span>
+<span class="sd">        The size of each embedding vector.</span>
+<span class="sd">    n_filters: int</span>
+<span class="sd">        Number of channels produced by the convolution.</span>
+<span class="sd">    filter_sizes: list</span>
+<span class="sd">        A list that contains integers that correspond to the amount of channels produced by the convolution.</span>
+<span class="sd">    output_dim: int</span>
+<span class="sd">        The size of the output fully connected layer.</span>
+<span class="sd">    dropout: float</span>
+<span class="sd">        The probability of an element to be zeroed.</span>
+<span class="sd">    pad_idx: int</span>
+<span class="sd">        The numerical identifier mapped to the string token used as padding.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    conv_and_pool(x, conv)</span>
+<span class="sd">        Applies 1d convolution.</span>
+<span class="sd">    forward(x)</span>
+<span class="sd">        Defines the computation performed by the CNN model at every call.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">n_filters</span><span class="p">,</span> <span class="n">filter_sizes</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span> <span class="n">pad_idx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vocab_size : int</span>
+<span class="sd">            Size of the dictionary of embeddings.</span>
+<span class="sd">        embedding_dim: int</span>
+<span class="sd">            The size of each embedding vector.</span>
+<span class="sd">        n_filters: int</span>
+<span class="sd">            Number of channels produced by the convolution.</span>
+<span class="sd">        filter_sizes: list</span>
+<span class="sd">            A list that contains integers that correspond to the amount of channels produced by the convolution.</span>
+<span class="sd">        output_dim: int</span>
+<span class="sd">            The size of the output fully connected layer.</span>
+<span class="sd">        dropout: float</span>
+<span class="sd">            The probability of an element to be zeroed.</span>
+<span class="sd">        pad_idx: int</span>
+<span class="sd">            The numerical identifier mapped to the string token used as padding.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># extends the functionality of this method</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># defines an embedding layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">padding_idx</span><span class="o">=</span><span class="n">pad_idx</span><span class="p">)</span>
+        <span class="c1"># freezes the embedding layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># applies convolution over the input signal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convs_1d</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_filters</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                                       <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">filter_sizes</span><span class="p">])</span>
+        <span class="c1"># applies linear transformation to the convolved data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filter_sizes</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_filters</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span>
+        <span class="c1"># regularizes and prevents the co-adaptation of neurons</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CNN.conv_and_pool"><a class="viewcode-back" href="../cnn.html#cnn.CNN.conv_and_pool">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">conv_and_pool</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conv</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Applies 1d convolution.</span>
+
+<span class="sd">        The method applies a 2D convolution over the input. It then filters the convolved output</span>
+<span class="sd">        using Rectified Linear Unit. The result is a tensor of size [32 x 64 x Y x 100] where:</span>
+<span class="sd">            * 32 is the batch size</span>
+<span class="sd">            * 64 is the number of filters</span>
+<span class="sd">            * Y is the sequence length which is equal to the sentence length</span>
+<span class="sd">            * 100 is size of the second dimension of the kernel of a convolutional layer</span>
+
+<span class="sd">        This temporary result is then squeezed to yields a tensor of size [32 x 64 x Y].</span>
+<span class="sd">        In the last step, the method applies a 1D max pooling over the squeezed tensor with</span>
+<span class="sd">        a sliding window of size equal to Y. The result is then squeezed again to produce</span>
+<span class="sd">        a tensor of size [32 x 64].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: torch.tensor</span>
+<span class="sd">            This is a tensor of type float that operates as input for each convolution layer.</span>
+<span class="sd">        conv: torch.nn.Module</span>
+<span class="sd">            Applies a 2D convolution over a given input.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.tensor</span>
+<span class="sd">            The 2D tensor to be used in the linear layer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">x_max</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">max_pool1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x_max</span></div>
+
+<div class="viewcode-block" id="CNN.forward"><a class="viewcode-back" href="../cnn.html#cnn.CNN.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Defines the computation performed by the CNN model at every call.</span>
+
+<span class="sd">        This method *forwards* the given input to every single model layer.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: torch.tensor</span>
+<span class="sd">            This is a tensor of type int that operates as input for the defined model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.tensor</span>
+<span class="sd">            The tensor containing the predictions made by the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># embedded vectors of: (batch_size, seq_length, embedding_dim)</span>
+        <span class="n">embeds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># creates a fourth dimension for the convolutional module list</span>
+        <span class="n">embeds</span> <span class="o">=</span> <span class="n">embeds</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># gets output of each convolutional layer</span>
+        <span class="n">conv_results</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_and_pool</span><span class="p">(</span><span class="n">embeds</span><span class="p">,</span> <span class="n">conv</span><span class="p">)</span> <span class="k">for</span> <span class="n">conv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">convs_1d</span><span class="p">]</span>
+        <span class="c1"># concatenates results</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">conv_results</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># add dropout</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># fully connected layer that yields a float tensor of size equal to the batch size</span>
+        <span class="n">logit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logit</span></div></div>
+
+
+<div class="viewcode-block" id="nlp_preprocessor"><a class="viewcode-back" href="../cnn.html#cnn.nlp_preprocessor">[docs]</a><span class="k">def</span> <span class="nf">nlp_preprocessor</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Defines an NLP preprocessor.</span>
+
+<span class="sd">    This method takes some text and filters it. It deletes any</span>
+<span class="sd">    non - alphanumeric character found. This is a standard</span>
+<span class="sd">    preprocessing routine in machine learning models for NLP.</span>
+<span class="sd">    It increases model&#39;s performance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    text: str</span>
+<span class="sd">        This is the string to preprocess.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        The preprocessed - filtered string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;&lt;[^&gt;]*&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="n">emoticons</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;(?::|;|=)(?:-)?[)(DP]&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[\W]+&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">emoticons</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span></div>
+
+
+<div class="viewcode-block" id="dataset_preprocessor"><a class="viewcode-back" href="../cnn.html#cnn.dataset_preprocessor">[docs]</a><span class="k">def</span> <span class="nf">dataset_preprocessor</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Preprocess text in given dataset.</span>
+
+<span class="sd">    This method calls the predefined NLP preprocessor to filter out</span>
+<span class="sd">    any non-alphanumeric character found in the given dataset. The</span>
+<span class="sd">    method saves afterward the result using the given filepath. The</span>
+<span class="sd">    filepath can also be relative. An example filepath is provided:</span>
+
+<span class="sd">        `./filtered_dataset.csv`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df: pandas.DataFrame</span>
+<span class="sd">        This is the given dataset.</span>
+<span class="sd">    column: str</span>
+<span class="sd">        This is the dataset split ratio to get the sample data to fit the model.</span>
+<span class="sd">    filepath: str</span>
+<span class="sd">        This is the dataset split ratio to get the sample data to validate the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># apply the preprocessor to the dataframe</span>
+    <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">nlp_preprocessor</span><span class="p">)</span>
+    <span class="c1"># save data</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="train_validate_test_split"><a class="viewcode-back" href="../cnn.html#cnn.train_validate_test_split">[docs]</a><span class="k">def</span> <span class="nf">train_validate_test_split</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">train_percent</span><span class="o">=.</span><span class="mi">7</span><span class="p">,</span> <span class="n">validate_percent</span><span class="o">=.</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Splits the given dataset.</span>
+
+<span class="sd">    This method splits a dataframe into:</span>
+<span class="sd">        * A dataframe used to train the model</span>
+<span class="sd">        * A dataframe used to validate the model</span>
+<span class="sd">        * A dataframe used to test the model</span>
+
+<span class="sd">    The indexes of the given datasets are shuffled.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df: pandas.DataFrame</span>
+<span class="sd">        This is the given dataset.</span>
+<span class="sd">    seed: int</span>
+<span class="sd">        This is the seed used for the NumPy shuffler.</span>
+<span class="sd">    train_percent: float (optional)</span>
+<span class="sd">        This is the dataset split ratio to get the sample data to fit the model.</span>
+<span class="sd">    validate_percent: float (optional)</span>
+<span class="sd">        This is the dataset split ratio to get the sample data to validate the model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># shuffle the given dataframe indexes</span>
+    <span class="n">shuffled</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="c1"># get the number of rows inside the dataframe</span>
+    <span class="n">data_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="c1"># compute the number of rows for the training dataset</span>
+    <span class="n">train_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">train_percent</span> <span class="o">*</span> <span class="n">data_length</span><span class="p">)</span>
+    <span class="c1"># make the training dataset size divide perfectly the batch size</span>
+    <span class="n">train_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">train_end</span><span class="o">/</span><span class="n">BATCH_SIZE</span><span class="p">)</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span> <span class="o">+</span> <span class="n">BATCH_SIZE</span>
+    <span class="c1"># compute the number of rows for the validation dataset</span>
+    <span class="n">validate_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">validate_percent</span> <span class="o">*</span> <span class="n">data_length</span><span class="p">)</span> <span class="o">+</span> <span class="n">train_end</span>
+    <span class="c1"># make the validation dataset size divide perfectly the batch size</span>
+    <span class="n">validate_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">validate_end</span> <span class="o">/</span> <span class="n">BATCH_SIZE</span><span class="p">)</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span> <span class="o">+</span> <span class="n">BATCH_SIZE</span>
+    <span class="c1"># make the test dataset size divide perfectly the batch size</span>
+    <span class="n">test_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data_length</span> <span class="o">/</span> <span class="n">BATCH_SIZE</span><span class="p">)</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span>
+    <span class="c1"># set the training dataset</span>
+    <span class="n">train_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">shuffled</span><span class="p">[:</span><span class="n">train_end</span><span class="p">]]</span>
+    <span class="c1"># set the validation dataset</span>
+    <span class="n">valid_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">shuffled</span><span class="p">[</span><span class="n">train_end</span><span class="p">:</span><span class="n">validate_end</span><span class="p">]]</span>
+    <span class="c1"># set the test dataset</span>
+    <span class="n">test_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">shuffled</span><span class="p">[</span><span class="n">validate_end</span><span class="p">:</span><span class="n">test_end</span><span class="p">]]</span>
+    <span class="c1"># save the training dataset</span>
+    <span class="n">train_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;train_df.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># save the validation dataset</span>
+    <span class="n">valid_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;valid_df.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># save the test dataset</span>
+    <span class="n">test_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;test_df.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">inspect_vocab</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimates the Vocabulary size after subsampling.</span>
+
+<span class="sd">    This method performs a virtual subsampling of the given dataset.</span>
+<span class="sd">    This is done to increase the context window size of the embedding</span>
+<span class="sd">    layer. If the computed probability is less than 50%, then the word</span>
+<span class="sd">    is virtually discarded. The probability is given by the formula:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        p = 1 - \\sqrt{\\frac{t}{f}},</span>
+
+<span class="sd">    Where:</span>
+<span class="sd">        * :math:`p` is the probability of the token to be virtually discarded</span>
+<span class="sd">        * :math:`t` is a chosen threshold typically around :math:`10^5`</span>
+<span class="sd">        * :math:`f` the token frequency</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df: pandas.DataFrame</span>
+<span class="sd">        This is the given dataset.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The vocabulary size after the virtual subsampling.</span>
+<span class="sd">    int</span>
+<span class="sd">        The vocabulary size without virtual subsampling.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    `&lt;https://www.mitpressjournals.org/doi/pdf/10.1162/tacl_a_00134&gt;`_</span>
+
+<span class="sd">    `&lt;https://arxiv.org/abs/1301.3781&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># initialize vocabulary size register</span>
+    <span class="n">unique_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># get the text column loaded in a pandas Series</span>
+    <span class="n">texts</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">Summary</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="c1"># get a dictionary with the count of each token in that pandas Series</span>
+    <span class="n">word_counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">word_tokenize</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">texts</span><span class="p">)))</span>
+    <span class="c1"># get the total token sum</span>
+    <span class="n">total_token_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">word_counts</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="c1"># get the unique token sum</span>
+    <span class="n">final_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">word_counts</span><span class="p">)</span>
+    <span class="c1"># initialize threshold constant</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="mf">1e-5</span>
+    <span class="c1"># use the subsampling formula to estimate the vocabulary size</span>
+    <span class="k">for</span> <span class="n">token_freq</span> <span class="ow">in</span> <span class="n">word_counts</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">threshold</span> <span class="o">/</span> <span class="p">(</span><span class="n">token_freq</span> <span class="o">/</span> <span class="n">total_token_count</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">unique_count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">unique_count</span><span class="p">,</span> <span class="n">final_count</span>
+
+
+<div class="viewcode-block" id="compute_vocab_size"><a class="viewcode-back" href="../cnn.html#cnn.compute_vocab_size">[docs]</a><span class="k">def</span> <span class="nf">compute_vocab_size</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns vocabulary size</span>
+
+<span class="sd">    This method computes vocabulary size. It uses the subsampling</span>
+<span class="sd">    flag defined in the main thread. If subsampling is activated,</span>
+<span class="sd">    then the method sets the vocabulary size equal to the subsampled</span>
+<span class="sd">    estimation of the vocabulary size. Otherwise, it sets the</span>
+<span class="sd">    vocabulary size equal to the total unique token count.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">subsampling</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">vocab_subsampled</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">token_count</span></div>
+
+
+<div class="viewcode-block" id="count_parameters"><a class="viewcode-back" href="../cnn.html#cnn.count_parameters">[docs]</a><span class="k">def</span> <span class="nf">count_parameters</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Counts model trainable parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The number of trainable parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="binary_accuracy"><a class="viewcode-back" href="../cnn.html#cnn.binary_accuracy">[docs]</a><span class="k">def</span> <span class="nf">binary_accuracy</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Computes prediction accuracy.</span>
+
+<span class="sd">    This method is used to estimate the models accuracy over binary</span>
+<span class="sd">    targets. The prediction is rounded to compare it to the true label.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    preds: torch.tensor</span>
+<span class="sd">        These are the predictions returned by the model for an input batch.</span>
+<span class="sd">    y: torch.tensor</span>
+<span class="sd">        This is the ground truth tensor for the same input batch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    torch.tensor</span>
+<span class="sd">        The model accuracy ratio for the given predictions. The tensor is a single float element container.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># use the sigmoid to round the predictions</span>
+    <span class="n">rounded_preds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">preds</span><span class="p">))</span>
+    <span class="c1"># count the correct predictions by comparing them to the ground truth tensor</span>
+    <span class="n">correct</span> <span class="o">=</span> <span class="p">(</span><span class="n">rounded_preds</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    <span class="c1"># compute the accuracy of the model</span>
+    <span class="n">acc</span> <span class="o">=</span> <span class="n">correct</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">correct</span><span class="p">)</span>
+    <span class="c1"># return the accuracy</span>
+    <span class="k">return</span> <span class="n">acc</span></div>
+
+
+<div class="viewcode-block" id="get_max_length"><a class="viewcode-back" href="../cnn.html#cnn.get_max_length">[docs]</a><span class="k">def</span> <span class="nf">get_max_length</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Computes maximum number of tokens given a dataframe.</span>
+
+<span class="sd">    This method is used to compute the maximum length found at the text</span>
+<span class="sd">    column of the given dataframe. The column of the dataframe with the</span>
+<span class="sd">    text is *Summary*. This function is useful if one decides to use</span>
+<span class="sd">    padding for tokenization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df: pandas.DataFrame</span>
+<span class="sd">        This is the dataset of the model.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The maximum number of tokens found in a dataframe column.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># initializes maximum sentence length register</span>
+    <span class="n">max_len</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># iterates the Summary column of the given dataframe</span>
+    <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">Summary</span><span class="p">:</span>
+        <span class="c1"># checks length of the &quot;running&quot; sentence</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="n">max_len</span><span class="p">:</span>
+            <span class="c1"># update maximum sentence length register</span>
+            <span class="n">max_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">max_len</span></div>
+
+
+<div class="viewcode-block" id="train"><a class="viewcode-back" href="../cnn.html#cnn.train">[docs]</a><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">iterator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fits a model.</span>
+
+<span class="sd">    This method is used to fit the defined CNN model. The method provides</span>
+<span class="sd">    progress context for the user using progressbar.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iterator: torchtext.data.Iterator</span>
+<span class="sd">        An iterator to load batches of training data from the given dataset.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The epoch training loss</span>
+<span class="sd">    float</span>
+<span class="sd">        The epoch training accuracy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># initializes epoch loss accumulator</span>
+    <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># initializes epoch accuracy accumulator</span>
+    <span class="n">epoch_acc</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># sets the module in training mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">iterator</span><span class="p">):</span>
+        <span class="c1"># set the gradients to zero</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="c1"># make predictions</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">Summary</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># compute loss</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">Sentiment</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># compute accuracy</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">binary_accuracy</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">Sentiment</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># store the gradients</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="c1"># parameter update based on the current gradients</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="c1"># update epoch loss accumulator</span>
+        <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="c1"># update epoch accuracy accumulator</span>
+        <span class="n">epoch_acc</span> <span class="o">+=</span> <span class="n">acc</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterator</span><span class="p">),</span> <span class="n">epoch_acc</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="evaluate"><a class="viewcode-back" href="../cnn.html#cnn.evaluate">[docs]</a><span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">iterator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Evaluates a model.</span>
+
+<span class="sd">    This method is called either to validate the defined CNN model</span>
+<span class="sd">    or to test it, by disabling gradient calculation. The method</span>
+<span class="sd">    provides progress context for the user using progressbar.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iterator: torchtext.data.Iterator</span>
+<span class="sd">        An iterator to load batches of evaluation data from the given dataset.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The epoch evaluation loss</span>
+<span class="sd">    float</span>
+<span class="sd">        The epoch evaluation accuracy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># initializes epoch loss accumulator</span>
+    <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># initializes epoch accuracy accumulator</span>
+    <span class="n">epoch_acc</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># sets the module in evaluation mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="c1"># disables gradient calculation</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">iterator</span><span class="p">):</span>
+            <span class="c1"># make predictions</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">Summary</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># compute loss</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">Sentiment</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+            <span class="c1"># compute accuracy</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="n">binary_accuracy</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">Sentiment</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+            <span class="c1"># update epoch loss accumulator</span>
+            <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="c1"># update epoch accuracy accumulator</span>
+            <span class="n">epoch_acc</span> <span class="o">+=</span> <span class="n">acc</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterator</span><span class="p">),</span> <span class="n">epoch_acc</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="epoch_time"><a class="viewcode-back" href="../cnn.html#cnn.epoch_time">[docs]</a><span class="k">def</span> <span class="nf">epoch_time</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Computes epoch duration.</span>
+
+<span class="sd">    This method is called upon the launch of each epoch,</span>
+<span class="sd">    and upon the termination of each epoch. It then uses</span>
+<span class="sd">    the checkpoints created to compute the epoch&#39;s duration.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        Number of minutes rounded down that represent the running epoch&#39;s duration</span>
+<span class="sd">    int</span>
+<span class="sd">        The remaining of seconds that represent the running epoch&#39;s duration</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
+    <span class="n">elapsed_mins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">elapsed_time</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>
+    <span class="n">elapsed_secs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">elapsed_time</span> <span class="o">-</span> <span class="p">(</span><span class="n">elapsed_mins</span> <span class="o">*</span> <span class="mi">60</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">elapsed_mins</span><span class="p">,</span> <span class="n">elapsed_secs</span></div>
+
+
+<div class="viewcode-block" id="plot_loss_and_accuracy"><a class="viewcode-back" href="../cnn.html#cnn.plot_loss_and_accuracy">[docs]</a><span class="k">def</span> <span class="nf">plot_loss_and_accuracy</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Plots model&#39;s fitting results.</span>
+
+<span class="sd">    This method takes the lists containing the training and the</span>
+<span class="sd">    validation losses and plots them together. This method is</span>
+<span class="sd">    useful when detecting an over-fitted model (or an under-fitted).</span>
+<span class="sd">    The method saves the plot at the project directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">train_losses</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Training loss&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">val_losses</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Validation loss&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Losses&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;model-train_valid_losses.png&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="predict_sentiment"><a class="viewcode-back" href="../cnn.html#cnn.predict_sentiment">[docs]</a><span class="k">def</span> <span class="nf">predict_sentiment</span><span class="p">(</span><span class="n">sentence</span><span class="p">,</span> <span class="n">min_len</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Classifies a custom critic.</span>
+
+<span class="sd">    This method converts a sentence into arithmetic tokens.</span>
+<span class="sd">    The tokens are then given to a trained model. The model</span>
+<span class="sd">    predicts the sentiment of that *critic*.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sentence: str</span>
+<span class="sd">        The custom critic to be classified.</span>
+<span class="sd">    min_len: int (optional)</span>
+<span class="sd">        The minimum length of tokens of the given sentence.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The probability of the critic being negative.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># load natural language processor</span>
+    <span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;en&#39;</span><span class="p">)</span>
+    <span class="c1"># set the module in evaluation mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="c1"># tokenize given text using the defined processor</span>
+    <span class="n">tokenized</span> <span class="o">=</span> <span class="p">[</span><span class="n">tok</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">nlp</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span><span class="n">sentence</span><span class="p">)]</span>
+    <span class="c1"># pad the sentence if it has less tokens than required</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokenized</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_len</span><span class="p">:</span>
+        <span class="n">tokenized</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;&lt;pad&gt;&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">min_len</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokenized</span><span class="p">))</span>
+    <span class="c1"># convert tokens to embeddings using the fit torchtext data field</span>
+    <span class="n">indexed</span> <span class="o">=</span> <span class="p">[</span><span class="n">TEXT</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokenized</span><span class="p">]</span>
+    <span class="c1"># convert embedding list to torch tensor and load it to the available device</span>
+    <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">indexed</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># unsqueeze tensor to make it 2D</span>
+    <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># filter prediction using sigmoid</span>
+    <span class="n">prediction</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">tensor</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">prediction</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="filter_prediction"><a class="viewcode-back" href="../cnn.html#cnn.filter_prediction">[docs]</a><span class="k">def</span> <span class="nf">filter_prediction</span><span class="p">(</span><span class="n">prediction</span><span class="p">,</span> <span class="n">critic</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Provides feedback over a custom prediction.</span>
+
+<span class="sd">    This method takes the prediction of the model on a custom critic and</span>
+<span class="sd">    defines if it was positive or negative. Finally, it prints the proper</span>
+<span class="sd">    message.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    prediction: float</span>
+<span class="sd">        The probability of a critic being negative</span>
+<span class="sd">    critic: str</span>
+<span class="sd">        The word sequence used as a critic</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;negative&quot;</span>
+    <span class="k">if</span> <span class="n">prediction</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;positive&quot;</span>
+        <span class="n">prediction</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">prediction</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Label for critic </span><span class="si">{:25s}</span><span class="s1">: </span><span class="si">{:7s}</span><span class="se">\t</span><span class="s1">-</span><span class="se">\t</span><span class="s1">Prediction validity probability: </span><span class="si">{:10f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="s1">&#39;</span><span class="se">\&quot;</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">critic</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\&quot;</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">prediction</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="manual_testing"><a class="viewcode-back" href="../cnn.html#cnn.manual_testing">[docs]</a><span class="k">def</span> <span class="nf">manual_testing</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Calls model upon custom critics.</span>
+
+<span class="sd">    In this method there are some movie critics</span>
+<span class="sd">    defined to test the model with custom data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">x_critic</span> <span class="o">=</span> <span class="s2">&quot;This film is terrible&quot;</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">predict_sentiment</span><span class="p">(</span><span class="n">x_critic</span><span class="p">)</span>
+    <span class="n">filter_prediction</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">x_critic</span><span class="p">)</span>
+    <span class="n">x_critic</span> <span class="o">=</span> <span class="s2">&quot;This film is great&quot;</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">predict_sentiment</span><span class="p">(</span><span class="n">x_critic</span><span class="p">)</span>
+    <span class="n">filter_prediction</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">x_critic</span><span class="p">)</span>
+    <span class="n">x_critic</span> <span class="o">=</span> <span class="s2">&quot;I loved this film&quot;</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">predict_sentiment</span><span class="p">(</span><span class="n">x_critic</span><span class="p">)</span>
+    <span class="n">filter_prediction</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">x_critic</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># define a seed for the randomizers</span>
+    <span class="n">SEED</span> <span class="o">=</span> <span class="mi">42</span>
+    <span class="c1"># load English package of spacy package</span>
+    <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;en&#39;</span><span class="p">)</span>
+    <span class="c1"># disable warnings</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+    <span class="c1"># seed random package</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+    <span class="c1"># seed numpy</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+    <span class="c1"># seed pytorch</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+    <span class="c1"># check for any CUDA device available</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+    <span class="c1"># make program controllability easier</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># define batch size</span>
+    <span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="c1"># define filepath to dave model</span>
+    <span class="n">model_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;cnn-model.pt&#39;</span>
+    <span class="c1"># define the input&#39;s filepath</span>
+    <span class="n">dataset_filepath</span> <span class="o">=</span> <span class="s1">&#39;..&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;dataset&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;IMDB.csv&#39;</span>
+    <span class="c1"># load the dataset</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">dataset_filepath</span><span class="p">)</span>
+    <span class="c1"># dataset preprocessed</span>
+    <span class="n">dataset_preprocessor</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="s1">&#39;Summary&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;..&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;dataset&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;MoviesDatasetPreprocessed.csv&#39;</span><span class="p">)</span>
+    <span class="c1"># reload dataset after preprocessing</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;..&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;dataset&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;MoviesDatasetPreprocessed.csv&#39;</span><span class="p">)</span>
+    <span class="c1"># inspect vocabulary</span>
+    <span class="n">vocab_subsampled</span><span class="p">,</span> <span class="n">token_count</span> <span class="o">=</span> <span class="n">inspect_vocab</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="c1"># set subsampling flag</span>
+    <span class="n">subsampling</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># set vocabulary size</span>
+    <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">compute_vocab_size</span><span class="p">()</span>
+    <span class="c1"># split the dataset</span>
+    <span class="n">train_validate_test_split</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">SEED</span><span class="p">)</span>
+    <span class="c1"># define torchtext data text field</span>
+    <span class="n">TEXT</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">tokenize</span><span class="o">=</span><span class="s1">&#39;spacy&#39;</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># define torchtext data label field</span>
+    <span class="n">LABEL</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">unk_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pad_token</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># associate defined fields with DataFrame columns</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;Summary&#39;</span><span class="p">,</span> <span class="n">TEXT</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Sentiment&#39;</span><span class="p">,</span> <span class="n">LABEL</span><span class="p">)]</span>
+    <span class="c1"># define a dataset of columns stored in CSV</span>
+    <span class="n">train_data</span><span class="p">,</span> <span class="n">valid_data</span><span class="p">,</span> <span class="n">test_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">TabularDataset</span><span class="o">.</span><span class="n">splits</span><span class="p">(</span>
+        <span class="n">path</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
+        <span class="n">train</span><span class="o">=</span><span class="s1">&#39;train_df.csv&#39;</span><span class="p">,</span>
+        <span class="n">validation</span><span class="o">=</span><span class="s1">&#39;valid_df.csv&#39;</span><span class="p">,</span>
+        <span class="n">test</span><span class="o">=</span><span class="s1">&#39;test_df.csv&#39;</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+        <span class="n">fields</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
+        <span class="n">skip_header</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="c1"># construct the Vocab object for the TEXT field</span>
+    <span class="n">TEXT</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">valid_data</span><span class="p">,</span> <span class="n">test_data</span><span class="p">,</span>
+                     <span class="n">max_size</span><span class="o">=</span><span class="n">vocab_size</span><span class="p">,</span>
+                     <span class="n">vectors</span><span class="o">=</span><span class="s2">&quot;glove.6B.100d&quot;</span><span class="p">,</span>
+                     <span class="n">unk_init</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="o">.</span><span class="n">normal_</span><span class="p">)</span>
+    <span class="c1"># construct the Vocab object for the LABEL field</span>
+    <span class="n">LABEL</span><span class="o">.</span><span class="n">build_vocab</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span>
+    <span class="c1"># define an iterator that batches the training dataset object</span>
+    <span class="n">train_iterator</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">BucketIterator</span><span class="p">(</span>
+        <span class="n">train_data</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># define an iterator that batches the validation dataset object</span>
+    <span class="n">valid_iterator</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">BucketIterator</span><span class="p">(</span>
+        <span class="n">valid_data</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># define an iterator that batches the test dataset object</span>
+    <span class="n">test_iterator</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">BucketIterator</span><span class="p">(</span>
+        <span class="n">test_data</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># define the size of the dictionary of embeddings</span>
+    <span class="n">INPUT_DIM</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">TEXT</span><span class="o">.</span><span class="n">vocab</span><span class="p">)</span>
+    <span class="c1"># define the size of each embedding vector</span>
+    <span class="n">EMBEDDING_DIM</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="c1"># define the number of channels produced by each convolution</span>
+    <span class="n">N_FILTERS</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="c1"># define the size of the first dimension of the kernel of each convolutional layer</span>
+    <span class="n">FILTER_SIZES</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+    <span class="c1"># define the number of neurons in the output layer of the model</span>
+    <span class="n">OUTPUT_DIM</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># define the probability of an element to be zeroed</span>
+    <span class="n">DROPOUT</span> <span class="o">=</span> <span class="mf">0.3</span>
+    <span class="c1"># return the index of the string token used as padding</span>
+    <span class="n">PAD_IDX</span> <span class="o">=</span> <span class="n">TEXT</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">TEXT</span><span class="o">.</span><span class="n">pad_token</span><span class="p">]</span>
+    <span class="c1"># return the index of the string token used to represent Out-Of-Vocabulary words</span>
+    <span class="n">UNK_IDX</span> <span class="o">=</span> <span class="n">TEXT</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">stoi</span><span class="p">[</span><span class="n">TEXT</span><span class="o">.</span><span class="n">unk_token</span><span class="p">]</span>
+    <span class="c1"># define a CNN model</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">CNN</span><span class="p">(</span><span class="n">INPUT_DIM</span><span class="p">,</span> <span class="n">EMBEDDING_DIM</span><span class="p">,</span> <span class="n">N_FILTERS</span><span class="p">,</span> <span class="n">FILTER_SIZES</span><span class="p">,</span> <span class="n">OUTPUT_DIM</span><span class="p">,</span> <span class="n">DROPOUT</span><span class="p">,</span> <span class="n">PAD_IDX</span><span class="p">)</span>
+    <span class="c1"># print model summary</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="c1"># print model trainable parameters</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The model has </span><span class="si">{</span><span class="n">count_parameters</span><span class="p">()</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1"> trainable parameters&#39;</span><span class="p">)</span>
+    <span class="c1"># extract pretrained vectors</span>
+    <span class="n">pretrained_embeddings</span> <span class="o">=</span> <span class="n">TEXT</span><span class="o">.</span><span class="n">vocab</span><span class="o">.</span><span class="n">vectors</span>
+    <span class="c1"># copy pretrained vectors to the embedding layer of the defined model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">embedding</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">pretrained_embeddings</span><span class="p">)</span>
+    <span class="c1"># set the weight of the &lt;pad&gt; token</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">embedding</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">PAD_IDX</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">EMBEDDING_DIM</span><span class="p">)</span>
+    <span class="c1"># set the weight of the &lt;unk&gt; token</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">embedding</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">UNK_IDX</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">EMBEDDING_DIM</span><span class="p">)</span>
+    <span class="c1"># define optimizer</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
+    <span class="c1"># define cost function</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">(</span><span class="n">pos_weight</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="n">BATCH_SIZE</span><span class="p">]))</span>
+    <span class="c1"># load model to the available device</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># load cost function to the available device</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">criterion</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># define number of epochs for the model&#39;s training</span>
+    <span class="n">N_EPOCHS</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="c1"># initialize a register that holds the best validation cost returned during an epoch</span>
+    <span class="n">best_valid_loss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="c1"># declare the train and validation loss lists</span>
+    <span class="n">train_losses</span><span class="p">,</span> <span class="n">val_losses</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="c1"># fit the model</span>
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_EPOCHS</span><span class="p">):</span>
+        <span class="c1"># initialize an epoch starting time-point</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="c1"># train the model</span>
+        <span class="n">train_loss</span><span class="p">,</span> <span class="n">train_acc</span> <span class="o">=</span> <span class="n">train</span><span class="p">(</span><span class="n">train_iterator</span><span class="p">)</span>
+        <span class="c1"># update the train loss list</span>
+        <span class="n">train_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">train_acc</span><span class="p">)</span>
+        <span class="c1"># validate the model</span>
+        <span class="n">valid_loss</span><span class="p">,</span> <span class="n">valid_acc</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">valid_iterator</span><span class="p">)</span>
+        <span class="c1"># update the validation loss list</span>
+        <span class="n">val_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">valid_acc</span><span class="p">)</span>
+        <span class="c1"># initialize an epoch ending time-point</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="c1"># compute epoch duration in minutes and seconds</span>
+        <span class="n">epoch_mins</span><span class="p">,</span> <span class="n">epoch_secs</span> <span class="o">=</span> <span class="n">epoch_time</span><span class="p">()</span>
+        <span class="c1"># save the model if validation loss was better than past validation losses</span>
+        <span class="k">if</span> <span class="n">valid_loss</span> <span class="o">&lt;</span> <span class="n">best_valid_loss</span><span class="p">:</span>
+            <span class="n">best_valid_loss</span> <span class="o">=</span> <span class="n">valid_loss</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">model_filepath</span><span class="p">)</span>
+        <span class="c1"># print epoch&#39;s progress results</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Epoch: </span><span class="si">{</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="si">:</span><span class="s1">02</span><span class="si">}</span><span class="s1"> | Epoch Time: </span><span class="si">{</span><span class="n">epoch_mins</span><span class="si">}</span><span class="s1">m </span><span class="si">{</span><span class="n">epoch_secs</span><span class="si">}</span><span class="s1">s&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">Train Loss: </span><span class="si">{</span><span class="n">train_loss</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> | Train Acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1"> Val. Loss: </span><span class="si">{</span><span class="n">valid_loss</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> |  Val. Acc: </span><span class="si">{</span><span class="n">valid_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># plot model&#39;s fitting data</span>
+    <span class="n">plot_loss_and_accuracy</span><span class="p">()</span>
+    <span class="c1"># load the best evaluated model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_filepath</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">device</span><span class="p">))</span>
+    <span class="c1"># test the model</span>
+    <span class="n">test_loss</span><span class="p">,</span> <span class="n">test_acc</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">test_iterator</span><span class="p">)</span>
+    <span class="c1"># print test results</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Test Loss: </span><span class="si">{</span><span class="n">test_loss</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> | Test Acc: </span><span class="si">{</span><span class="n">test_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+    <span class="c1"># test the model over custom critics</span>
+    <span class="n">manual_testing</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, Andreas Karatzas and Romanos Kapsalis
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

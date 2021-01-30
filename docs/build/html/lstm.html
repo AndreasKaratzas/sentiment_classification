@@ -1,0 +1,508 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lstm module &mdash; Sentiment Classification</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Sentiment Classification
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">lstm module</a><ul>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Sentiment Classification</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>lstm module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/lstm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-lstm">
+<span id="lstm-module"></span><h1>lstm module<a class="headerlink" href="#module-lstm" title="Permalink to this headline">¶</a></h1>
+<p>Sentiment Classification on Movie Reviews using LSTMs and Keras.</p>
+<p>In this script, there is an implementation of a Long Short Term Memory(LSTM)
+which is a Recurrent Neural Network(RNN) to perform binary sentiment classification
+on movie reviews.</p>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://keras.io/api/">https://keras.io/api/</a></p>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p>The Deep Learning Framework used for the development of the current module is Keras <span id="id1">[R9247369ab1f2-1]</span>.
+.. [R9247369ab1f2-1] Keras: is a deep learning API written in Python, running on top of the machine learning platform
+TensorFlow. It was developed with a focus on enabling fast experimentation. Being able to go from idea
+to result as fast as possible is key to doing good research. is the high-level API of TensorFlow 2:
+an approachable, highly-productive interface for solving machine learning problems, with a focus on modern
+deep learning. It provides essential abstractions and building blocks for developing and shipping machine
+learning solutions with high iteration velocity.</p>
+<dl class="py function">
+<dt id="lstm.build_model">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">build_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vocab_size</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#build_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.build_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines and compiles a model.</p>
+<blockquote>
+<div><p>This method defines and then compiles a Sequential Keras Model.
+Our Sequential model is a linear stack of these layers:</p>
+<ul class="simple">
+<li><p>Embedding Layer: a dictionary mapping integer indices to dense vectors, it takes as input a 2D tensor of integers, of shape (samples, sequence_length), where each entry is a sequence of integers.</p></li>
+<li><p>SpatialDropout1D: same function as Dropout, however, it drops entire 1D feature maps instead of individual elements.</p></li>
+<li><p>LSTM</p></li>
+<li><p>Dropout: randomly sets input units to 0 with a frequency of rate at each step during training time, which helps prevent overfitting. Inputs not set to 0 are scaled up by 1/(1 - rate) such that the sum over all inputs is unchanged.</p></li>
+<li><p>Dense: implements the operation: output = activation(dot(input, kernel) + bias), where activation is the element-wise activation function passed as the activation argument, kernel is a weights matrix created by the layer, and bias is a bias vector created by the layer (optional - not used here). We choose Sigmoid as activation function because the output is binary. The optimizer is Adam and the loss function is Binary Crossentropy because the output is binary.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vocab_size: int</strong></dt><dd><p>Size of the vocabulary</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Sequential</dt><dd><p>The compiled model</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.dataset_preprocessing">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">dataset_preprocessing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#dataset_preprocessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.dataset_preprocessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dataset preprocessing.</p>
+<p>This method is used to preprocess the reviews.
+More specifically:</p>
+<ul class="simple">
+<li><p>It concatenates all reviews in one string.</p></li>
+<li><p>It checks if our reviews need stemming</p></li>
+<li><p>It gets number of unique words</p></li>
+<li><p>It calculates the frequency of each word</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>str</dt><dd><p>All reviews concatenated in one string.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.f1_m">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">f1_m</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">y_true</span></em>, <em class="sig-param"><span class="n">y_pred</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#f1_m"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.f1_m" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates f1 metric.</p>
+<p>This method is used to implement a custom f1 metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>y_true: keras_tensor</strong></dt><dd><p>Is the true data (or target, ground truth) we pass to the fit method
+(conversion of the numpy array y_train into a tensor).</p>
+</dd>
+<dt><strong>y_pred: keras_tensor</strong></dt><dd><p>Is the data predicted (calculated, output) by our model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>F1-score metric.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.main">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Driver for LSTM model.</p>
+<p>This function defines the order of execution and binds all other modules.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.plot_graphs">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">plot_graphs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">history</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#plot_graphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.plot_graphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots loss and accuracy graphs.</p>
+<p>This method plots loss and accuracy graphs of our model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>history: tensorflow.keras.callbacks.History()</strong></dt><dd><p>A record of training loss values and metrics values at successive epochs,
+as well as validation loss values and validation metrics values</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.plot_review_length_histogram">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">plot_review_length_histogram</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#plot_review_length_histogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.plot_review_length_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots reviews length histogram.</p>
+<p>This method is used to plot a histogram which shows
+the total number of reviews that have a specific length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>X: pandas.core.series.Series</strong></dt><dd><p>Sentiment column from the dataset.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.plot_sentiment_histogram">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">plot_sentiment_histogram</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sentiment</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#plot_sentiment_histogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.plot_sentiment_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots count of positive and negative reviews histogram.</p>
+<p>This method is used to plot a histogram which shows
+the number of positive and negative reviews in the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sentiment: numpy.ndarray</strong></dt><dd><p>Review column from the dataset.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.precision_m">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">precision_m</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">y_true</span></em>, <em class="sig-param"><span class="n">y_pred</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#precision_m"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.precision_m" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates precision metric.</p>
+<p>This method is used to implement a custom precision metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>y_true: keras_tensor</strong></dt><dd><p>Is the true data (or target, ground truth) we pass to the fit method
+(conversion of the numpy array y_train into a tensor).</p>
+</dd>
+<dt><strong>y_pred: keras_tensor</strong></dt><dd><p>Is the data predicted (calculated, output) by our model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>Precision metric.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.recall_m">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">recall_m</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">y_true</span></em>, <em class="sig-param"><span class="n">y_pred</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#recall_m"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.recall_m" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates recall metric.</p>
+<p>This method is used to implement a custom recall metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>y_true: keras_tensor</strong></dt><dd><p>Is the true data (or target, ground truth) we pass to the fit method
+(conversion of the numpy array y_train into a tensor).</p>
+</dd>
+<dt><strong>y_pred: keras_tensor</strong></dt><dd><p>Is the data predicted (calculated, output) by our model.
+(conversion of the numpy array y_train into a tensor).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>Recall metric.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.test_model">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">test_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">tokenizer</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#test_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.test_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests our model.</p>
+<p>This method tests our model with 4 sample reviews to see how it predicts sentiment.
+First, it transforms a sentence into a sequence of integers.
+Then the sequence is given to the trained model, which
+predicts the sentiment of that review.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model: Sequential</strong></dt><dd><p>The trained Sequential Model.</p>
+</dd>
+<dt><strong>tokenizer: Tokenizer</strong></dt><dd><p>Allows us to vectorize a text corpus, by turning each text into a sequence of integers</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.tokenize_pad">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">tokenize_pad</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">X_train</span></em>, <em class="sig-param"><span class="n">X_test</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#tokenize_pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.tokenize_pad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and pads sequences.</p>
+<p>This method is used to transform words into sequences of integers.
+First, Keras Tokenizer is used to tokenize sentences to words, keeping only most frequent words.
+Then, we transform each word to an integer (based on frequency) and we create a vocabulary.
+After that, we create integer sequences that we pad to a specific length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>X: numpy.ndarray</strong></dt><dd><p>Review column from the dataset.</p>
+</dd>
+<dt><strong>X_train: numpy.ndarray</strong></dt><dd><p>Used to fit the machine learning model (input).</p>
+</dd>
+<dt><strong>X_test: numpy.ndarray</strong></dt><dd><p>Used to evaluate the fit machine learning model(input).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>numpy.ndarray</dt><dd><p>Used to fit the machine learning model (input).</p>
+</dd>
+<dt>numpy.ndarray</dt><dd><p>Used to evaluate the fit machine learning model(input).</p>
+</dd>
+<dt>Tokenizer</dt><dd><p>Allows us to vectorize a text corpus, by turning each text into a sequence of integers</p>
+</dd>
+<dt>int</dt><dd><p>Size of the vocabulary</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.train_model">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">train_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">X_train</span></em>, <em class="sig-param"><span class="n">y_train</span></em>, <em class="sig-param"><span class="n">X_test</span></em>, <em class="sig-param"><span class="n">y_test</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#train_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.train_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits a model.
+This method is used to train the defined LSTM model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model: Sequential</strong></dt><dd><p>The compiled Sequential model.</p>
+</dd>
+<dt><strong>X_train: numpy.ndarray</strong></dt><dd><p>Used to fit the machine learning model (input).</p>
+</dd>
+<dt><strong>y_train: numpy.ndarray</strong></dt><dd><p>Used to fit the machine learning model (output).</p>
+</dd>
+<dt><strong>X_test: numpy.ndarray</strong></dt><dd><p>Used to evaluate the fit machine learning model(input).</p>
+</dd>
+<dt><strong>y_test: numpy.ndarray</strong></dt><dd><p>Used to evaluate the fit machine learning model(output).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>tensorflow.keras.callbacks.History()</dt><dd><p>A record of training loss values and metrics values at successive epochs,
+as well as validation loss values and validation metrics values</p>
+</dd>
+<dt>Sequential</dt><dd><p>The trained model</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="lstm.wordcloud_illustration">
+<code class="sig-prename descclassname">lstm.</code><code class="sig-name descname">wordcloud_illustration</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">texts</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lstm.html#wordcloud_illustration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lstm.wordcloud_illustration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots Wordcloud illustration.</p>
+<p>This method is used to plot a Wordcloud illustration,
+a technique for visualising frequent words in a text
+where the size of the words represents their frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>texts: str</strong></dt><dd><p>All reviews concatenated in one string.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, Andreas Karatzas and Romanos Kapsalis
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

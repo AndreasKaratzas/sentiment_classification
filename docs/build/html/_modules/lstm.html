@@ -1,0 +1,731 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lstm &mdash; Sentiment Classification</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Sentiment Classification
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Sentiment Classification</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>lstm</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lstm</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Sentiment Classification on Movie Reviews using LSTMs and Keras.</span>
+
+<span class="sd">In this script, there is an implementation of a Long Short Term Memory(LSTM)</span>
+<span class="sd">which is a Recurrent Neural Network(RNN) to perform binary sentiment classification</span>
+<span class="sd">on movie reviews.</span>
+
+<span class="sd">See Also</span>
+<span class="sd">--------</span>
+<span class="sd">`&lt;https://keras.io/api/&gt;`_</span>
+
+<span class="sd">References</span>
+<span class="sd">----------</span>
+<span class="sd">The Deep Learning Framework used for the development of the current module is Keras [1]_.</span>
+<span class="sd">.. [1] Keras: is a deep learning API written in Python, running on top of the machine learning platform</span>
+<span class="sd">TensorFlow. It was developed with a focus on enabling fast experimentation. Being able to go from idea</span>
+<span class="sd">to result as fast as possible is key to doing good research. is the high-level API of TensorFlow 2:</span>
+<span class="sd">an approachable, highly-productive interface for solving machine learning problems, with a focus on modern</span>
+<span class="sd">deep learning. It provides essential abstractions and building blocks for developing and shipping machine</span>
+<span class="sd">learning solutions with high iteration velocity.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">wordcloud</span> <span class="kn">import</span> <span class="n">WordCloud</span><span class="p">,</span> <span class="n">STOPWORDS</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">nltk.stem</span> <span class="kn">import</span> <span class="n">PorterStemmer</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.preprocessing.text</span> <span class="kn">import</span> <span class="n">Tokenizer</span>
+<span class="kn">from</span> <span class="nn">keras.preprocessing.sequence</span> <span class="kn">import</span> <span class="n">pad_sequences</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.models</span> <span class="kn">import</span> <span class="n">Sequential</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.layers</span> <span class="kn">import</span> <span class="n">Embedding</span><span class="p">,</span> <span class="n">Dense</span><span class="p">,</span> <span class="n">LSTM</span><span class="p">,</span> <span class="n">Dropout</span>
+<span class="kn">from</span> <span class="nn">tensorflow.python.keras.layers</span> <span class="kn">import</span> <span class="n">SpatialDropout1D</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">backend</span> <span class="k">as</span> <span class="n">K</span>
+
+
+<div class="viewcode-block" id="plot_sentiment_histogram"><a class="viewcode-back" href="../lstm.html#lstm.plot_sentiment_histogram">[docs]</a><span class="k">def</span> <span class="nf">plot_sentiment_histogram</span><span class="p">(</span><span class="n">sentiment</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plots count of positive and negative reviews histogram.</span>
+
+<span class="sd">     This method is used to plot a histogram which shows</span>
+<span class="sd">     the number of positive and negative reviews in the dataset.</span>
+
+<span class="sd">     Parameters</span>
+<span class="sd">     ----------</span>
+<span class="sd">     sentiment: numpy.ndarray</span>
+<span class="sd">              Review column from the dataset.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">unique_vals</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Sentiment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Values&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Count&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">sentiment</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Sentiment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sentiment</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plot_review_length_histogram"><a class="viewcode-back" href="../lstm.html#lstm.plot_review_length_histogram">[docs]</a><span class="k">def</span> <span class="nf">plot_review_length_histogram</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plots reviews length histogram.</span>
+
+<span class="sd">     This method is used to plot a histogram which shows</span>
+<span class="sd">     the total number of reviews that have a specific length.</span>
+
+<span class="sd">     Parameters</span>
+<span class="sd">     ----------</span>
+<span class="sd">     X: pandas.core.series.Series</span>
+<span class="sd">              Sentiment column from the dataset.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get the length of every review in the dataset</span>
+    <span class="n">reviews_len</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">]</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">reviews_len</span><span class="p">)</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Values&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Count&quot;</span><span class="p">)</span>
+    <span class="c1"># create review length histogram</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">reviews_len</span><span class="p">)</span><span class="o">.</span><span class="n">hist</span><span class="p">()</span>
+    <span class="c1"># plot histogram</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="dataset_preprocessing"><a class="viewcode-back" href="../lstm.html#lstm.dataset_preprocessing">[docs]</a><span class="k">def</span> <span class="nf">dataset_preprocessing</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Dataset preprocessing.</span>
+
+<span class="sd">     This method is used to preprocess the reviews.</span>
+<span class="sd">     More specifically:</span>
+
+<span class="sd">     * It concatenates all reviews in one string.</span>
+<span class="sd">     * It checks if our reviews need stemming</span>
+<span class="sd">     * It gets number of unique words</span>
+<span class="sd">     * It calculates the frequency of each word</span>
+
+<span class="sd">     Returns</span>
+<span class="sd">     ----------</span>
+<span class="sd">     str</span>
+<span class="sd">        All reviews concatenated in one string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># create a sequence of words</span>
+    <span class="n">reviews</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Summary&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">all_text</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">reviews</span><span class="p">])</span>
+    <span class="n">reviews_split</span> <span class="o">=</span> <span class="n">all_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># put all reviews in one string</span>
+    <span class="n">all_text2</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reviews_split</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Number of words :&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_text2</span><span class="p">))</span>
+    <span class="c1"># create a list of words</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">all_text2</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="c1"># build a dictionary that maps words to integers based on frequency</span>
+    <span class="n">count_words</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+    <span class="c1"># count all the words using Counter Method</span>
+    <span class="n">total_words</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span>
+    <span class="n">sorted_words</span> <span class="o">=</span> <span class="n">count_words</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="mi">9000</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">total_words</span><span class="p">)</span>
+    <span class="c1"># get unique words</span>
+    <span class="n">unique</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">word</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">:</span>
+            <span class="n">unique</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+
+    <span class="c1"># sort</span>
+    <span class="n">unique</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="c1"># print unique words</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unique</span><span class="p">))</span>
+    <span class="c1"># check for stemming</span>
+    <span class="n">rootWord</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">:</span>
+        <span class="n">rootWord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="n">word</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rootWord</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">all_text2</span></div>
+
+
+<div class="viewcode-block" id="wordcloud_illustration"><a class="viewcode-back" href="../lstm.html#lstm.wordcloud_illustration">[docs]</a><span class="k">def</span> <span class="nf">wordcloud_illustration</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plots Wordcloud illustration.</span>
+
+<span class="sd">     This method is used to plot a Wordcloud illustration,</span>
+<span class="sd">     a technique for visualising frequent words in a text</span>
+<span class="sd">     where the size of the words represents their frequency.</span>
+
+<span class="sd">     Parameters</span>
+<span class="sd">     ----------</span>
+<span class="sd">     texts: str</span>
+<span class="sd">              All reviews concatenated in one string.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># limit the word count</span>
+    <span class="n">wordcount</span> <span class="o">=</span> <span class="mi">500</span>
+    <span class="c1"># set the stopwords</span>
+    <span class="n">stopwords</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">STOPWORDS</span><span class="p">)</span>
+    <span class="n">stopwords</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;br&quot;</span><span class="p">)</span>
+
+    <span class="c1"># setup, generate and save the word cloud image to a file</span>
+    <span class="n">wc</span> <span class="o">=</span> <span class="n">WordCloud</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                   <span class="n">background_color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+                   <span class="n">max_words</span><span class="o">=</span><span class="n">wordcount</span><span class="p">,</span>
+                   <span class="n">stopwords</span><span class="o">=</span><span class="n">stopwords</span><span class="p">)</span>
+    <span class="n">wc</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+    <span class="n">wc</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="s2">&quot;WordCloud.png&quot;</span><span class="p">)</span>
+
+    <span class="c1"># show the wordcloud as output</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wc</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;bilinear&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="tokenize_pad"><a class="viewcode-back" href="../lstm.html#lstm.tokenize_pad">[docs]</a><span class="k">def</span> <span class="nf">tokenize_pad</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates and pads sequences.</span>
+
+<span class="sd">       This method is used to transform words into sequences of integers.</span>
+<span class="sd">       First, Keras Tokenizer is used to tokenize sentences to words, keeping only most frequent words.</span>
+<span class="sd">       Then, we transform each word to an integer (based on frequency) and we create a vocabulary.</span>
+<span class="sd">       After that, we create integer sequences that we pad to a specific length.</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       X: numpy.ndarray</span>
+<span class="sd">               Review column from the dataset.</span>
+<span class="sd">       X_train: numpy.ndarray</span>
+<span class="sd">              Used to fit the machine learning model (input).</span>
+<span class="sd">       X_test: numpy.ndarray</span>
+<span class="sd">             Used to evaluate the fit machine learning model(input).</span>
+
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       numpy.ndarray</span>
+<span class="sd">                    Used to fit the machine learning model (input).</span>
+<span class="sd">       numpy.ndarray</span>
+<span class="sd">                    Used to evaluate the fit machine learning model(input).</span>
+<span class="sd">       Tokenizer</span>
+<span class="sd">             Allows us to vectorize a text corpus, by turning each text into a sequence of integers</span>
+<span class="sd">       int</span>
+<span class="sd">          Size of the vocabulary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">max_seq_length</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="c1"># tokenize sentences, keep 10000 most frequent words</span>
+    <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">num_words</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+    <span class="c1"># create the vocabulary index based on word frequency</span>
+    <span class="n">tokenizer</span><span class="o">.</span><span class="n">fit_on_texts</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="c1"># get the number of the unique words based on the number of elements in this dictionary</span>
+    <span class="n">vocab_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">word_index</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Found </span><span class="si">%s</span><span class="s1"> unique tokens.&#39;</span> <span class="o">%</span> <span class="n">vocab_size</span><span class="p">)</span>
+
+    <span class="c1"># assign an integer to each word and create integer sequences</span>
+    <span class="n">x_train_tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">texts_to_sequences</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+    <span class="n">x_test_tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">texts_to_sequences</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+
+    <span class="c1"># pad all our reviews to a specific length</span>
+    <span class="n">X_train</span> <span class="o">=</span> <span class="n">pad_sequences</span><span class="p">(</span><span class="n">x_train_tokens</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">max_seq_length</span><span class="p">)</span>
+    <span class="n">X_test</span> <span class="o">=</span> <span class="n">pad_sequences</span><span class="p">(</span><span class="n">x_test_tokens</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">max_seq_length</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_test</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="n">vocab_size</span></div>
+
+
+<div class="viewcode-block" id="recall_m"><a class="viewcode-back" href="../lstm.html#lstm.recall_m">[docs]</a><span class="k">def</span> <span class="nf">recall_m</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates recall metric.</span>
+
+<span class="sd">     This method is used to implement a custom recall metric.</span>
+
+<span class="sd">     Parameters</span>
+<span class="sd">     ----------</span>
+<span class="sd">     y_true: keras_tensor</span>
+<span class="sd">           Is the true data (or target, ground truth) we pass to the fit method</span>
+<span class="sd">           (conversion of the numpy array y_train into a tensor).</span>
+<span class="sd">     y_pred: keras_tensor</span>
+<span class="sd">           Is the data predicted (calculated, output) by our model.</span>
+<span class="sd">           (conversion of the numpy array y_train into a tensor).</span>
+
+<span class="sd">     Returns</span>
+<span class="sd">     -------</span>
+<span class="sd">     float</span>
+<span class="sd">           Recall metric.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># calculate true positives</span>
+    <span class="n">true_positives</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y_true</span> <span class="o">*</span> <span class="n">y_pred</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="c1"># get total actual positives</span>
+    <span class="n">possible_positives</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="c1"># calculate recall</span>
+    <span class="n">recall</span> <span class="o">=</span> <span class="n">true_positives</span> <span class="o">/</span> <span class="p">(</span><span class="n">possible_positives</span> <span class="o">+</span> <span class="n">K</span><span class="o">.</span><span class="n">epsilon</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">recall</span></div>
+
+
+<div class="viewcode-block" id="precision_m"><a class="viewcode-back" href="../lstm.html#lstm.precision_m">[docs]</a><span class="k">def</span> <span class="nf">precision_m</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates precision metric.</span>
+
+<span class="sd">    This method is used to implement a custom precision metric.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    y_true: keras_tensor</span>
+<span class="sd">          Is the true data (or target, ground truth) we pass to the fit method</span>
+<span class="sd">          (conversion of the numpy array y_train into a tensor).</span>
+<span class="sd">    y_pred: keras_tensor</span>
+<span class="sd">          Is the data predicted (calculated, output) by our model.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">          Precision metric.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># calculate true positives</span>
+    <span class="n">true_positives</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y_true</span> <span class="o">*</span> <span class="n">y_pred</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="c1"># get predicted positives (true positives and false positives)</span>
+    <span class="n">predicted_positives</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="c1"># calculate precision</span>
+    <span class="n">precision</span> <span class="o">=</span> <span class="n">true_positives</span> <span class="o">/</span> <span class="p">(</span><span class="n">predicted_positives</span> <span class="o">+</span> <span class="n">K</span><span class="o">.</span><span class="n">epsilon</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">precision</span></div>
+
+
+<div class="viewcode-block" id="f1_m"><a class="viewcode-back" href="../lstm.html#lstm.f1_m">[docs]</a><span class="k">def</span> <span class="nf">f1_m</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates f1 metric.</span>
+
+<span class="sd">     This method is used to implement a custom f1 metric.</span>
+
+<span class="sd">     Parameters</span>
+<span class="sd">     ----------</span>
+<span class="sd">     y_true: keras_tensor</span>
+<span class="sd">           Is the true data (or target, ground truth) we pass to the fit method</span>
+<span class="sd">           (conversion of the numpy array y_train into a tensor).</span>
+<span class="sd">     y_pred: keras_tensor</span>
+<span class="sd">           Is the data predicted (calculated, output) by our model.</span>
+
+<span class="sd">     Returns</span>
+<span class="sd">     -------</span>
+<span class="sd">     float</span>
+<span class="sd">           F1-score metric.</span>
+
+<span class="sd">     &quot;&quot;&quot;</span>
+    <span class="c1"># get precision</span>
+    <span class="n">precision</span> <span class="o">=</span> <span class="n">precision_m</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+    <span class="c1"># get recall</span>
+    <span class="n">recall</span> <span class="o">=</span> <span class="n">recall_m</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">((</span><span class="n">precision</span> <span class="o">*</span> <span class="n">recall</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">precision</span> <span class="o">+</span> <span class="n">recall</span> <span class="o">+</span> <span class="n">K</span><span class="o">.</span><span class="n">epsilon</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="build_model"><a class="viewcode-back" href="../lstm.html#lstm.build_model">[docs]</a><span class="k">def</span> <span class="nf">build_model</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Defines and compiles a model.</span>
+
+<span class="sd">    This method defines and then compiles a Sequential Keras Model.</span>
+<span class="sd">    Our Sequential model is a linear stack of these layers:</span>
+
+<span class="sd">    * Embedding Layer: a dictionary mapping integer indices to dense vectors, it takes as input a 2D tensor of integers, of shape (samples, sequence_length), where each entry is a sequence of integers.</span>
+
+<span class="sd">    * SpatialDropout1D: same function as Dropout, however, it drops entire 1D feature maps instead of individual elements.</span>
+
+<span class="sd">    * LSTM</span>
+
+<span class="sd">    * Dropout: randomly sets input units to 0 with a frequency of rate at each step during training time, which helps prevent overfitting. Inputs not set to 0 are scaled up by 1/(1 - rate) such that the sum over all inputs is unchanged.</span>
+
+<span class="sd">    * Dense: implements the operation: output = activation(dot(input, kernel) + bias), where activation is the element-wise activation function passed as the activation argument, kernel is a weights matrix created by the layer, and bias is a bias vector created by the layer (optional - not used here). We choose Sigmoid as activation function because the output is binary. The optimizer is Adam and the loss function is Binary Crossentropy because the output is binary.</span>
+
+<span class="sd">   Parameters</span>
+<span class="sd">   ----------</span>
+<span class="sd">   vocab_size: int</span>
+<span class="sd">         Size of the vocabulary</span>
+
+<span class="sd">   Returns</span>
+<span class="sd">   -------</span>
+<span class="sd">   Sequential</span>
+<span class="sd">       The compiled model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># initialize parameters for Embedding Layer</span>
+    <span class="n">MAX_SEQUENCE_LENGTH</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="n">EMBEDDING_DIM</span> <span class="o">=</span> <span class="mi">100</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
+    <span class="c1"># add Embedding layer</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Embedding</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">EMBEDDING_DIM</span><span class="p">,</span> <span class="n">input_length</span><span class="o">=</span><span class="n">MAX_SEQUENCE_LENGTH</span><span class="p">))</span>
+    <span class="c1"># add Spatial dropout</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">SpatialDropout1D</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+    <span class="c1"># add LSTM layer</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">LSTM</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">recurrent_dropout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">))</span>
+    <span class="c1"># add dropout</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+    <span class="c1"># add Dense layer with sigmoid activation function</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">))</span>
+    <span class="c1"># compile model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="s1">&#39;binary_crossentropy&#39;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">,</span> <span class="n">f1_m</span><span class="p">,</span> <span class="n">precision_m</span><span class="p">,</span> <span class="n">recall_m</span><span class="p">])</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+<div class="viewcode-block" id="train_model"><a class="viewcode-back" href="../lstm.html#lstm.train_model">[docs]</a><span class="k">def</span> <span class="nf">train_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fits a model.</span>
+<span class="sd">       This method is used to train the defined LSTM model.</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       model: Sequential</span>
+<span class="sd">             The compiled Sequential model.</span>
+<span class="sd">       X_train: numpy.ndarray</span>
+<span class="sd">              Used to fit the machine learning model (input).</span>
+<span class="sd">       y_train: numpy.ndarray</span>
+<span class="sd">              Used to fit the machine learning model (output).</span>
+<span class="sd">       X_test: numpy.ndarray</span>
+<span class="sd">             Used to evaluate the fit machine learning model(input).</span>
+<span class="sd">       y_test: numpy.ndarray</span>
+<span class="sd">             Used to evaluate the fit machine learning model(output).</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       tensorflow.keras.callbacks.History()</span>
+<span class="sd">                 A record of training loss values and metrics values at successive epochs,</span>
+<span class="sd">                 as well as validation loss values and validation metrics values</span>
+<span class="sd">       Sequential</span>
+<span class="sd">                The trained model</span>
+<span class="sd">       &quot;&quot;&quot;</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+    <span class="n">loss</span><span class="p">,</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">f1_score</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">recall</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># scores = model.evaluate(X_test, y_test, verbose=1)</span>
+
+    <span class="c1"># print metrics</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;F1-score&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">f1_score</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Precision&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">precision</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Recall&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">recall</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">history</span><span class="p">,</span> <span class="n">model</span></div>
+
+
+<div class="viewcode-block" id="plot_graphs"><a class="viewcode-back" href="../lstm.html#lstm.plot_graphs">[docs]</a><span class="k">def</span> <span class="nf">plot_graphs</span><span class="p">(</span><span class="n">history</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plots loss and accuracy graphs.</span>
+
+<span class="sd">       This method plots loss and accuracy graphs of our model.</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       history: tensorflow.keras.callbacks.History()</span>
+<span class="sd">                A record of training loss values and metrics values at successive epochs,</span>
+<span class="sd">                as well as validation loss values and validation metrics values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s1">&#39;accuracy&#39;</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s1">&#39;val_accuracy&#39;</span><span class="p">])</span>
+
+    <span class="c1"># create accuracy graph</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;model accuracy&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;accuracy&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
+    <span class="c1"># save to file</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;foo.png&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s1">&#39;val_loss&#39;</span><span class="p">])</span>
+
+    <span class="c1"># create loss graph</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;model loss&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;loss&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
+    <span class="c1"># save to file</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;foo1.png&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="test_model"><a class="viewcode-back" href="../lstm.html#lstm.test_model">[docs]</a><span class="k">def</span> <span class="nf">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests our model.</span>
+
+<span class="sd">        This method tests our model with 4 sample reviews to see how it predicts sentiment.</span>
+<span class="sd">        First, it transforms a sentence into a sequence of integers.</span>
+<span class="sd">        Then the sequence is given to the trained model, which</span>
+<span class="sd">        predicts the sentiment of that review.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model: Sequential</span>
+<span class="sd">            The trained Sequential Model.</span>
+
+<span class="sd">        tokenizer: Tokenizer</span>
+<span class="sd">            Allows us to vectorize a text corpus, by turning each text into a sequence of integers</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># sample review 1</span>
+    <span class="n">test_word</span> <span class="o">=</span> <span class="s2">&quot;This is a bad bad movie&quot;</span>
+    <span class="c1"># transform text to a sequence of integers</span>
+    <span class="n">tw</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">texts_to_sequences</span><span class="p">([</span><span class="n">test_word</span><span class="p">])</span>
+    <span class="c1"># pad review to a specific length</span>
+    <span class="n">tw</span> <span class="o">=</span> <span class="n">pad_sequences</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw</span><span class="p">))</span>
+    <span class="c1"># get prediction (0 or 1)</span>
+    <span class="n">prediction</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">prediction</span><span class="p">)</span>
+
+    <span class="c1"># sample review 2</span>
+    <span class="n">test_word</span> <span class="o">=</span> <span class="s2">&quot;This film is terrible&quot;</span>
+    <span class="c1"># transform text to a sequence of integers</span>
+    <span class="n">tw1</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">texts_to_sequences</span><span class="p">([</span><span class="n">test_word</span><span class="p">])</span>
+    <span class="c1"># pad review to a specific length</span>
+    <span class="n">tw1</span> <span class="o">=</span> <span class="n">pad_sequences</span><span class="p">(</span><span class="n">tw1</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw1</span><span class="p">))</span>
+    <span class="c1"># get prediction (0 or 1)</span>
+    <span class="n">prediction1</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">prediction1</span><span class="p">)</span>
+
+    <span class="c1"># sample review 3</span>
+    <span class="n">test_word</span> <span class="o">=</span> <span class="s2">&quot;This film is great&quot;</span>
+    <span class="c1"># transform text to a sequence of integers</span>
+    <span class="n">tw2</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">texts_to_sequences</span><span class="p">([</span><span class="n">test_word</span><span class="p">])</span>
+    <span class="c1"># pad review to a specific length</span>
+    <span class="n">tw2</span> <span class="o">=</span> <span class="n">pad_sequences</span><span class="p">(</span><span class="n">tw2</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw2</span><span class="p">))</span>
+    <span class="c1"># get prediction (0 or 1)</span>
+    <span class="n">prediction2</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw2</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">prediction2</span><span class="p">)</span>
+
+    <span class="c1"># sample review 4</span>
+    <span class="n">test_word</span> <span class="o">=</span> <span class="s2">&quot;This film is awesome&quot;</span>
+    <span class="c1"># transform text to a sequence of integers</span>
+    <span class="n">tw3</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">texts_to_sequences</span><span class="p">([</span><span class="n">test_word</span><span class="p">])</span>
+    <span class="c1"># pad review to a specific length</span>
+    <span class="n">tw3</span> <span class="o">=</span> <span class="n">pad_sequences</span><span class="p">(</span><span class="n">tw3</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw3</span><span class="p">))</span>
+    <span class="c1"># get prediction (0 or 1)</span>
+    <span class="n">prediction3</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tw3</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">prediction3</span><span class="p">)</span></div>
+    
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../lstm.html#lstm.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Driver for LSTM model.</span>
+
+<span class="sd">    This function defines the order of execution and binds all other modules.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plot_sentiment_histogram</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Sentiment&#39;</span><span class="p">])</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Summary&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Sentiment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    
+    <span class="c1"># split dataset in train and test sets</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+    <span class="c1"># get the max length of a review (number of words in this sentence)</span>
+    <span class="n">max_length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">X</span><span class="p">])</span>
+    <span class="c1"># get the min length of a review (number of words in this sentence)</span>
+    <span class="n">min_length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">X</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">max_length</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">min_length</span><span class="p">)</span>
+
+    <span class="n">plot_review_length_histogram</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">all_text2</span> <span class="o">=</span> <span class="n">dataset_preprocessing</span><span class="p">()</span>
+    <span class="n">wordcloud_illustration</span><span class="p">(</span><span class="n">all_text2</span><span class="p">)</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">,</span> <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">tokenize_pad</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">build_model</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">)</span>
+    <span class="n">history</span><span class="p">,</span> <span class="n">model</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">)</span>
+    <span class="n">plot_graphs</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+    <span class="n">test_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># disable tensorflow deprecation warnings</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+    <span class="c1"># possible CUBLAS warnings/errors if running on GPU</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;CUDA_VISIBLE_DEVICES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;-1&#39;</span>
+    <span class="c1"># confirm device</span>
+    <span class="k">if</span> <span class="n">tf</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">gpu_device_name</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running on GPU&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Running on CPU&quot;</span><span class="p">)</span>
+    <span class="c1"># load dataset</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;..&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;dataset&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;MoviesDataset.csv&#39;</span><span class="p">)</span>
+    <span class="c1"># print 10 first rows</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+    <span class="c1"># initialize Stemmer</span>
+    <span class="n">ps</span> <span class="o">=</span> <span class="n">PorterStemmer</span><span class="p">()</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, Andreas Karatzas and Romanos Kapsalis
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
