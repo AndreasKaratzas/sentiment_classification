@@ -45,6 +45,7 @@ import sys
 import time
 import tqdm
 import math
+import nltk
 import spacy
 import numpy
 import pandas
@@ -632,8 +633,12 @@ def manual_testing():
 
 
 if __name__ == "__main__":
+    # install nltk punkt
+    nltk.download('punkt')
     # define a seed for the randomizers
     SEED = 42
+    # install English Spacy package
+    spacy.cli.download("en")
     # load English package of spacy package
     spacy.load('en_core_web_sm')
     # disable warnings
