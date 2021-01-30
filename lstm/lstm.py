@@ -374,12 +374,8 @@ def train_model(model, X_train, y_train, X_test, y_test):
                  as well as validation loss values and validation metrics values
        Sequential
                 The trained model
-       """
-    # This callback will stop the training when there is no improvement in the validation loss for
-    # three consecutive epochs.
-    callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
-    history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32,
-                        callbacks=[callback])
+       """    
+    history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32)                        
     loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=1)
     # scores = model.evaluate(X_test, y_test, verbose=1)
 
