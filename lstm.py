@@ -40,7 +40,6 @@ print(df.head(10))
 ps = PorterStemmer()
 
 
-# create reviews count histogram
 def plot_sentiment_histogram(sentiment):
     """Plots count of positive and negative reviews histogram.
 
@@ -62,7 +61,6 @@ def plot_sentiment_histogram(sentiment):
     print(sentiment.values)
 
 
-# create review length histogram
 def plot_review_length_histogram(X):
     """Plots reviews length histogram.
 
@@ -172,7 +170,6 @@ def wordcloud_illustration(texts):
     plt.show()
 
 
-# tokenize create and pad sequences
 def tokenize_pad(X, X_train, X_test):
     """Creates and pads sequences.
 
@@ -225,7 +222,6 @@ def tokenize_pad(X, X_train, X_test):
     return X_train, X_test, tokenizer, vocab_size
 
 
-# calculate recall
 def recall_m(y_true, y_pred):
     """Calculates recall metric.
 
@@ -255,7 +251,6 @@ def recall_m(y_true, y_pred):
     return recall
 
 
-# calculate precision
 def precision_m(y_true, y_pred):
     """Calculates precision metric.
 
@@ -284,7 +279,6 @@ def precision_m(y_true, y_pred):
     return precision
 
 
-# calculate f1-score
 def f1_m(y_true, y_pred):
     """Calculates f1 metric.
 
@@ -311,7 +305,6 @@ def f1_m(y_true, y_pred):
     return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
 
 
-# build model
 def build_model(vocab_size):
     """Defines and compiles a model.
 
@@ -399,7 +392,6 @@ def train_model(model, X_train, y_train, X_test, y_test):
     return history, model
 
 
-# create loss and accuracy graphs
 def plot_graphs(history):
     """Plots loss and accuracy graphs.
 
