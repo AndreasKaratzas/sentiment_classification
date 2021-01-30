@@ -19,9 +19,13 @@ deep learning. It provides essential abstractions and building blocks for develo
 learning solutions with high iteration velocity.
 """
 
+import sys
+import os
+import warnings
 from wordcloud import WordCloud, STOPWORDS
 import pandas as pd
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from nltk.stem import PorterStemmer
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -31,13 +35,6 @@ from tensorflow.keras.layers import Embedding, Dense, LSTM, Dropout
 from tensorflow.python.keras.layers import SpatialDropout1D
 from collections import Counter
 from keras import backend as K
-
-# load dataset
-df = pd.read_csv(r"./dataset/MoviesDataset.csv")
-# print 10 first rows
-print(df.head(10))
-# initialize Stemmer
-ps = PorterStemmer()
 
 
 def plot_sentiment_histogram(sentiment):
@@ -377,8 +374,8 @@ def train_model(model, X_train, y_train, X_test, y_test):
                  as well as validation loss values and validation metrics values
        Sequential
                 The trained model
-       """
-    history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32)
+       """    
+    history = model.fit(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=True, batch_size=32)                        
     loss, accuracy, f1_score, precision, recall = model.evaluate(X_test, y_test, verbose=1)
     # scores = model.evaluate(X_test, y_test, verbose=1)
 
@@ -411,9 +408,10 @@ def plot_graphs(history):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
     # save to file
     plt.savefig('foo.png')
+    plt.show()
+
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
 
@@ -422,9 +420,9 @@ def plot_graphs(history):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
     # save to file
     plt.savefig('foo1.png')
+    plt.show()
 
 
 def test_model(model, tokenizer):
@@ -520,4 +518,19 @@ def main():
 
 
 if __name__ == "__main__":
+    # disable tensorflow deprecation warnings
+    warnings.filterwarnings("ignore")
+    # possible CUBLAS warnings/errors if running on GPU
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    # confirm device
+    if tf.test.gpu_device_name():
+        print('Running on GPU')
+    else:
+        print("Running on CPU")
+    # load dataset
+    df = pd.read_csv('..' + os.sep + 'dataset' + os.sep + 'MoviesDataset.csv')
+    # print 10 first rows
+    print(df.head(10))
+    # initialize Stemmer
+    ps = PorterStemmer()
     main()
