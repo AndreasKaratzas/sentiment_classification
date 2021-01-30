@@ -16,7 +16,7 @@ Therefore, while the *dynamic CNN* performs spatial analysis, the *LSTM* perform
 
 ## Installation
 
-To install the project, execute:
+To install the project first install [Anaconda](https://docs.anaconda.com/anaconda/install/), and then execute:
 * `git clone https://github.com/andreasceid/sentiment_classification.git` to clone the repository
 * `cd sentiment_classification` to access the project directory
 * `pip install -r requirements.txt` to install all dependencies
