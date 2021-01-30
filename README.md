@@ -1,6 +1,6 @@
 # Sentiment Classifiaction
 
-![Movie Critics Classification](output_16_0.png)
+![Movie Critics Classification](wordcloud_illustration.png)
 
 In this repository we have implemented a couple of deep learning models for binary sentiment analysis:
 * A Dynamic CNN model, also known as [Kim CNN](https://arxiv.org/abs/1408.5882v2): 
