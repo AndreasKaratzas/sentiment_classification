@@ -220,9 +220,9 @@ def dataset_preprocessor(df, column, filepath):
     df: pandas.DataFrame
         This is the given dataset.
     column: str
-        This is the dataset split ratio to get the sample data to fit the model.
+        This is the column with the user reviews
     filepath: str
-        This is the dataset split ratio to get the sample data to validate the model.
+        This is the filepath to save the preprocessed dataset
     """
 
     # apply the preprocessor to the dataframe
@@ -571,7 +571,7 @@ def predict_sentiment(sentence, min_len=5):
     """
 
     # load natural language processor
-    nlp = spacy.load('en')
+    nlp = spacy.load('en_core_web_sm')
     # set the module in evaluation mode
     model.eval()
     # tokenize given text using the defined processor
@@ -635,7 +635,7 @@ if __name__ == "__main__":
     # define a seed for the randomizers
     SEED = 42
     # load English package of spacy package
-    spacy.load('en')
+    spacy.load('en_core_web_sm')
     # disable warnings
     warnings.filterwarnings("ignore")
     # seed random package
