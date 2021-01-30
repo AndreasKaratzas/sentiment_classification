@@ -7,15 +7,16 @@ on movie reviews.
 See Also
 --------
 `<https://keras.io/api/>`_
+
 References
 ----------
 The Deep Learning Framework used for the development of the current module is Keras [1]_.
 .. [1] Keras: is a deep learning API written in Python, running on top of the machine learning platform
-   TensorFlow. It was developed with a focus on enabling fast experimentation. Being able to go from idea
-   to result as fast as possible is key to doing good research. is the high-level API of TensorFlow 2:
-   an approachable, highly-productive interface for solving machine learning problems, with a focus on modern
-   deep learning. It provides essential abstractions and building blocks for developing and shipping machine
-   learning solutions with high iteration velocity.
+TensorFlow. It was developed with a focus on enabling fast experimentation. Being able to go from idea
+to result as fast as possible is key to doing good research. is the high-level API of TensorFlow 2:
+an approachable, highly-productive interface for solving machine learning problems, with a focus on modern
+deep learning. It provides essential abstractions and building blocks for developing and shipping machine
+learning solutions with high iteration velocity.
 """
 
 from wordcloud import WordCloud, STOPWORDS
@@ -32,7 +33,7 @@ from collections import Counter
 from keras import backend as K
 
 # load dataset
-df = pd.read_csv(r"MoviesDataset.csv")
+df = pd.read_csv(r"./dataset/MoviesDataset.csv")
 # print 10 first rows
 print(df.head(10))
 # initialize Stemmer
@@ -238,6 +239,7 @@ def recall_m(y_true, y_pred):
      y_pred: keras_tensor
            Is the data predicted (calculated, output) by our model.
            (conversion of the numpy array y_train into a tensor).
+
      Returns
      -------
      float
@@ -313,36 +315,28 @@ def f1_m(y_true, y_pred):
 def build_model(vocab_size):
     """Defines and compiles a model.
 
-       This method defines and then compiles a Sequential Keras Model.
-       Our Sequential model is a linear stack of these layers:
+    This method defines and then compiles a Sequential Keras Model.
+    Our Sequential model is a linear stack of these layers:
 
-       1.Embedding Layer: a dictionary mapping integer indices to dense vectors, it takes
-                          as input a 2D tensor of integers, of shape (samples, sequence_length),
-                          where each entry is a sequence of integers.
+    * Embedding Layer: a dictionary mapping integer indices to dense vectors, it takes as input a 2D tensor of integers, of shape (samples, sequence_length), where each entry is a sequence of integers.
 
-       2.SpatialDropout1D: same function as Dropout, however, it drops entire 1D feature maps
-                           instead of individual elements.
+    * SpatialDropout1D: same function as Dropout, however, it drops entire 1D feature maps instead of individual elements.
 
-       3.LSTM
+    * LSTM
 
-       4.Dropout: randomly sets input units to 0 with a frequency of rate at each step during
-                  training time, which helps prevent overfitting. Inputs not set to 0 are scaled
-                  up by 1/(1 - rate) such that the sum over all inputs is unchanged.
+    * Dropout: randomly sets input units to 0 with a frequency of rate at each step during training time, which helps prevent overfitting. Inputs not set to 0 are scaled up by 1/(1 - rate) such that the sum over all inputs is unchanged.
 
-       5.Dense:  implements the operation: output = activation(dot(input, kernel) + bias), where activation is the
-                 element-wise activation function passed as the activation argument, kernel is a weights matrix
-                 created by the layer, and bias is a bias vector created by the layer (optional - not used here).
-                 We choose Sigmoid as activation function because the output is binary. The optimizer is Adam and
-                 the loss function is Binary Crossentropy because the output is binary
+    * Dense: implements the operation: output = activation(dot(input, kernel) + bias), where activation is the element-wise activation function passed as the activation argument, kernel is a weights matrix created by the layer, and bias is a bias vector created by the layer (optional - not used here). We choose Sigmoid as activation function because the output is binary. The optimizer is Adam and the loss function is Binary Crossentropy because the output is binary.
 
-       Parameters
-       ----------
-       vocab_size: int
-             Size of the vocabulary
-       Returns
-       -------
-       Sequential
-           The compiled model
+   Parameters
+   ----------
+   vocab_size: int
+         Size of the vocabulary
+
+   Returns
+   -------
+   Sequential
+       The compiled model
     """
     # initialize parameters for Embedding Layer
     MAX_SEQUENCE_LENGTH = 30
@@ -504,6 +498,10 @@ def test_model(model, tokenizer):
     
 
 def main():
+    """Driver for LSTM model.
+
+    This function defines the order of execution and binds all other modules.
+    """
     plot_sentiment_histogram(df['Sentiment'])
 
     X = df['Summary'].values

@@ -649,15 +649,15 @@ if __name__ == "__main__":
     # define batch size
     BATCH_SIZE = 32
     # define filepath to dave model
-    model_filepath = 'cnn-model.pt'
+    model_filepath = 'pytorch/cnn-model.pt'
     # define the input's filepath
-    dataset_filepath = "../dataset/MoviesDataset.csv"
+    dataset_filepath = "dataset/MoviesDataset.csv"
     # load the dataset
     dataset = pandas.read_csv(dataset_filepath)
     # dataset preprocessed
-    dataset_preprocessor(dataset, 'Summary', "../dataset/MoviesDatasetPreprocessed.csv")
+    dataset_preprocessor(dataset, 'Summary', "dataset/MoviesDatasetPreprocessed.csv")
     # reload dataset after preprocessing
-    dataset = pandas.read_csv("../dataset/MoviesDatasetPreprocessed.csv")
+    dataset = pandas.read_csv("dataset/MoviesDatasetPreprocessed.csv")
     # inspect vocabulary
     vocab_subsampled, token_count = inspect_vocab(dataset)
     # set subsampling flag
@@ -674,7 +674,7 @@ if __name__ == "__main__":
     fields = [('Summary', TEXT), ('Sentiment', LABEL)]
     # define a dataset of columns stored in CSV
     train_data, valid_data, test_data = data.TabularDataset.splits(
-        path='./',
+        path='pytorch/',
         train='train_df.csv',
         validation='valid_df.csv',
         test='test_df.csv',
