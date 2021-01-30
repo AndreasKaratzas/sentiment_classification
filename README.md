@@ -41,10 +41,6 @@ The datasets used to test the models' performance can be found under the `datase
 
 There is also a directory named docs, where the interested can find the documentation generated using [Sphinx](https://www.sphinx-doc.org/en/master/index.html). The documentation can also be found at the project's [readthedocs](https://sentiment-classification.readthedocs.io/en/latest/index.html).
 
-## Documentation
-
-The code is fully documented.
-
 ## Results
 
 The models were tested under 2 datasets. The expected results are shown below.
