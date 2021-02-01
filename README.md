@@ -1,4 +1,4 @@
-# Sentiment Classifiaction
+# Sentiment Classification
 
 ![Movie Critics Classification](wordcloud_illustration.png)
 
@@ -8,7 +8,7 @@ In this repository we have implemented a couple of deep learning models for bina
     This model uses an Embedding Layer to transform all tokens found in a dataset to numerical vectors, forming a matrix. This makes CNN models able to approach the given dataset not as natural language data, but as *images* made of the tokens' vector representations. Hence, CNN models perform spatial analysis of the dataset. To make training more effective, we provide the model with pretrained word embeddings, using [GloVe](https://nlp.stanford.edu/projects/glove/).
 * A [Long Short-term Memory](https://doi.org/10.1162/neco.1997.9.8.1735) model:
     
-    This model uses a particular RNN cell architecture, called *LSTM cell*. Those cells are able to correlate data finding patterns in time. To utilize the full potential of the model, we add an Embedding Layer to the model. 
+    This model uses a particular RNN cell architecture, called *LSTM cell*. Those cells are able to correlate data finding patterns in time. More specifically, LSTMs are explicitly designed to avoid the long-term dependency problem, remembering information for long periods of time. To utilize the full potential of the model, we add [Keras Embedding Layer](https://keras.io/api/layers/core_layers/embedding/) to the model, which implements custom word embeddings. 
 
 Therefore, while the *dynamic CNN* performs spatial analysis, the *LSTM* performs termporal data analysis. Those models were tested under two datasets:
 * The [IMDB](https://www.kaggle.com/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews) dataset for binary sentiment classification
